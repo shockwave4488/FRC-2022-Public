@@ -5,6 +5,7 @@ import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.SparkMaxPIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.lib.PreferencesParser;
 import frc.lib.controlsystems.SimPID;
 import frc.lib.drive.SwerveParameters;
@@ -126,7 +127,9 @@ public class SwerveModuleNeos implements ISwerveModule {
     stopped = false;
   }
 
-  /** @return The analog input value of the encoder for the rotation motor */
+  /**
+   * @return The analog input value of the encoder for the rotation motor
+   */
   public double getAngleAnalog() {
     return m_turningEncoder.get();
   }
@@ -140,12 +143,16 @@ public class SwerveModuleNeos implements ISwerveModule {
         - ((m_turningEncoder.get() - potOffset + kEncoderResolution) % kEncoderResolution);
   }
 
-  /** @return The angle of the module's wheel in radians */
+  /**
+   * @return The angle of the module's wheel in radians
+   */
   public double getAngleRadians() {
     return (getAngleTicks() * 2 * Math.PI / kEncoderResolution);
   }
 
-  /** @return The angle of the module's wheels in degrees */
+  /**
+   * @return The angle of the module's wheels in degrees
+   */
   public double getAbsoluteAngleDegrees() {
     return (getAngleTicks() * 360 / kEncoderResolution);
   }
@@ -154,7 +161,9 @@ public class SwerveModuleNeos implements ISwerveModule {
     return desiredModuleAngle;
   }
 
-  /** @return The rpm of the drive motor */
+  /**
+   * @return The rpm of the drive motor
+   */
   public double getSpeedNative() {
     return m_driveMotor.getEncoder().getVelocity(); // get speed from spark
   }
@@ -163,7 +172,9 @@ public class SwerveModuleNeos implements ISwerveModule {
     return desiredModuleSpeed;
   }
 
-  /** @return The speed of the module's wheel in meters/sec */
+  /**
+   * @return The speed of the module's wheel in meters/sec
+   */
   public double getSpeed() {
     return (getSpeedNative() / (60 * gearRatio)) * Math.PI * kWheelDiameter;
   }
@@ -187,5 +198,6 @@ public class SwerveModuleNeos implements ISwerveModule {
     // SmartDashboard.putNumber(modulePosition + " Actual Speed", getSpeed());
     // SmartDashboard.putNumber(modulePosition + " Actual Angle", getAbsoluteAngleDegrees());
     // SmartDashboard.putNumber(modulePosition + " Angle Ticks", getAngleTicks());
+    SmartDashboard.putNumber(modulePosition + " Raw angle ticks", getAngleAnalog());
   }
 }

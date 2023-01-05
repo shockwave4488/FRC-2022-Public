@@ -1,6 +1,10 @@
 package frc.lib.util.app;
 
+import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import org.json.simple.JSONObject;
 
 /** Contains basic functions that are used often. */
 public final class Util {
@@ -48,5 +52,32 @@ public final class Util {
   public static double interpolate(double a, double b, double x) {
     x = limit(x, 0.0, 1.0);
     return a + (b - a) * x;
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <T> T toObj(JSONObject json, Class<T> clazz) {
+    try {
+      T output = clazz.getConstructor().newInstance();
+      for (Object obj : json.entrySet()) {
+        Map.Entry<String, Object> entry = (Map.Entry<String, Object>) obj;
+        Field field = clazz.getField(entry.getKey());
+        Object value = entry.getValue();
+        Class<?> type = field.getType();
+        if (type.isEnum()) {
+          final String finalValue = (String) value;
+          value =
+              Arrays.stream(type.getEnumConstants())
+                  .filter(enumConst -> ((Enum<?>) enumConst).name().equalsIgnoreCase(finalValue))
+                  .findFirst()
+                  .orElseThrow();
+        } else if (value instanceof JSONObject) {
+          value = toObj((JSONObject) value, type);
+        }
+        field.set(output, value);
+      }
+      return output;
+    } catch (Exception e) {
+      throw new RuntimeException("Unable to get obj from JSONObject", e);
+    }
   }
 }

@@ -1,9 +1,5 @@
 package frc.lib.drive;
 
-import frc.lib.PreferenceDoesNotExistException;
-import java.util.ArrayList;
-import org.json.simple.JSONObject;
-
 public class SwerveParameters {
   public int driveMotorChannel;
   public int turningMotorChannel;
@@ -54,31 +50,7 @@ public class SwerveParameters {
     this.modulePosition = modulePosition;
   }
 
-  public SwerveParameters(JSONObject jsonObject) {
-    ArrayList<String> keyList = new ArrayList<String>();
-    keyList.add(0, "driveMotorChannel");
-    keyList.add(1, "turningMotorChannel");
-    keyList.add(2, "turningEncoderChannel");
-    keyList.add(3, "potOffset");
-    keyList.add(4, "potResolution");
-    keyList.add(5, "wheelDiameter");
-    keyList.add(6, "driveGearRatio");
-    keyList.add(7, "modPosition");
-
-    for (int i = 0; i < keyList.size(); i++) {
-      if (jsonObject.get(keyList.get(i)) == null) {
-        throw new PreferenceDoesNotExistException(
-            keyList.get(i) + " in " + this.getClass().getSimpleName());
-      }
-    }
-
-    this.driveMotorChannel = ((Long) jsonObject.get(keyList.get(0))).intValue();
-    this.turningMotorChannel = ((Long) jsonObject.get(keyList.get(1))).intValue();
-    this.turningEncoderChannel = ((Long) jsonObject.get(keyList.get(2))).intValue();
-    this.potOffset = ((Number) jsonObject.get(keyList.get(3))).doubleValue();
-    this.potResolution = ((Long) jsonObject.get(keyList.get(4))).intValue();
-    this.wheelDiameter = ((Number) jsonObject.get(keyList.get(5))).doubleValue();
-    this.driveGearRatio = ((Number) jsonObject.get(keyList.get(6))).doubleValue();
-    this.modulePosition = ModulePosition.valueOf(jsonObject.get(keyList.get(7)).toString());
+  public SwerveParameters() {
+    // Called via Util.toObj()
   }
 }
