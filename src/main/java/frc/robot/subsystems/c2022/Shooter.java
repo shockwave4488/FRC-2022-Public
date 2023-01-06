@@ -104,10 +104,10 @@ public class Shooter extends ShockwaveSubsystemBase {
   */
 
   public void updateFromPrefs() {
-    p = prefs.tryGetDouble("ShooterP", 0);
-    i = prefs.tryGetDouble("ShooterI", 0);
-    d = prefs.tryGetDouble("ShooterD", 0);
-    f = prefs.tryGetDouble("ShooterF", 0);
+    p = prefs.tryGetValue(prefs::getDouble, "ShooterP", 0.0);
+    i = prefs.tryGetValue(prefs::getDouble, "ShooterI", 0.0);
+    d = prefs.tryGetValue(prefs::getDouble, "ShooterD", 0.0);
+    f = prefs.tryGetValue(prefs::getDouble, "ShooterF", 0.0);
 
     updatePIDF(p, i, d, f);
   }

@@ -83,10 +83,10 @@ public class Climber extends ShockwaveSubsystemBase {
   }
 
   public void updateFromPrefs() {
-    p = prefs.tryGetDouble("ClimberP", 0);
-    i = prefs.tryGetDouble("ClimberI", 0);
-    d = prefs.tryGetDouble("ClimberD", 0);
-    f = prefs.tryGetDouble("ClimberF", 0);
+    p = prefs.tryGetValue(prefs::getDouble, "ClimberP", 0.0);
+    i = prefs.tryGetValue(prefs::getDouble, "ClimberI", 0.0);
+    d = prefs.tryGetValue(prefs::getDouble, "ClimberD", 0.0);
+    f = prefs.tryGetValue(prefs::getDouble, "ClimberF", 0.0);
 
     updatePIDF(p, i, d, f);
   }

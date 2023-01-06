@@ -1,0 +1,63 @@
+{
+    "RobotName": "Swerve",
+    "AutoPosPathP": 4.6,
+    "AutoPosPathI": 0.0,
+    "AutoPosPathD": 0.0,
+    "AutoTurnP": 5.0,
+    "SwerveNeosDriveP":0.00005,
+    "SwerveNeosDriveI":0,
+    "SwerveNeosDriveD":0,
+    "SwerveNeosDriveFF":0.00016,
+    "SwerveNeosTurnP":0.0006,
+    "SwerveNeosTurnI":0,
+    "SwerveNeosTurnD":0.0001,
+    "SwerveParametersFL": {
+        "driveMotorChannel":5,
+        "turningMotorChannel":4,
+        "turningEncoderChannel":2,
+        "potOffset":2831,
+        "potResolution":4096,
+        "wheelDiameter":0.1016,
+        "driveGearRatio":8,
+        "modPosition":"FRONT_LEFT"
+    },
+    "SwerveParametersFR": {
+        "driveMotorChannel":3,
+        "turningMotorChannel":2,
+        "turningEncoderChannel":1,
+        "potOffset":2800,
+        "potResolution":4096,
+        "wheelDiameter":0.1016,
+        "driveGearRatio":8,
+        "modPosition":"FRONT_RIGHT"
+    },
+    "SwerveParametersBL": {
+        "driveMotorChannel":7,
+        "turningMotorChannel":6,
+        "turningEncoderChannel":3,
+        "potOffset":981,
+        "potResolution":4096,
+        "wheelDiameter":0.1016,
+        "driveGearRatio":8,
+        "modPosition":"BACK_LEFT"
+    },
+    "SwerveParametersBR": {
+        "driveMotorChannel":1,
+        "turningMotorChannel":10,
+        "turningEncoderChannel":0,
+        "potOffset":3192,
+        "potResolution":4096,
+        "wheelDiameter":0.1016,
+        "driveGearRatio":8,
+        "modPosition":"BACK_RIGHT"
+    },
+    "LimelightShooterName":"limelight",
+    "LimelightShooterConstants": {
+	"X": 0,
+	"Y": 0,
+	"Z": 0.48,
+	"Roll": 0,
+	"Pitch": -14,
+	"Yaw": 0
+    }
+}

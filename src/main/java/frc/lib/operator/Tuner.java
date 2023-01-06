@@ -71,7 +71,7 @@ public class Tuner {
    * @param defaultValue default value to use in case the pref doesnt exist
    */
   public void addValueFromPrefs(String key, double defaultValue) {
-    double val = prefs.tryGetDouble(key, defaultValue);
+    double val = prefs.tryGetValue(prefs::getDouble, key, defaultValue);
     addValue(key, val);
   }
 

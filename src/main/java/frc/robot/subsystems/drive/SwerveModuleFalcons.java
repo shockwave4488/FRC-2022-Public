@@ -85,13 +85,20 @@ public class SwerveModuleFalcons implements ISwerveModule {
     this.gearRatio = parameters.driveGearRatio;
     kWheelDiameter = parameters.wheelDiameter;
     m_driveMotor.configClosedloopRamp(0.25);
-    m_driveMotor.config_kP(0, prefs.tryGetDouble("SwerveFalconsDriveP", DEFAULT_DRIVE_P));
-    m_driveMotor.config_kI(0, prefs.tryGetDouble("SwerveFalconsDriveI", DEFAULT_DRIVE_I));
-    m_driveMotor.config_kD(0, prefs.tryGetDouble("SwerveFalconsDriveD", DEFAULT_DRIVE_D));
-    m_driveMotor.config_kF(0, prefs.tryGetDouble("SwerveFalconsDriveFF", DEFAULT_DRIVE_FF));
-    m_turningMotor.config_kP(0, prefs.tryGetDouble("SwerveFalconsTurnP", DEFAULT_TURN_P));
-    m_turningMotor.config_kI(0, prefs.tryGetDouble("SwerveFalconsTurnI", DEFAULT_TURN_I));
-    m_turningMotor.config_kD(0, prefs.tryGetDouble("SwerveFalconsTurnD", DEFAULT_TURN_D));
+    m_driveMotor.config_kP(
+        0, prefs.tryGetValue(prefs::getDouble, "SwerveFalconsDriveP", DEFAULT_DRIVE_P));
+    m_driveMotor.config_kI(
+        0, prefs.tryGetValue(prefs::getDouble, "SwerveFalconsDriveI", DEFAULT_DRIVE_I));
+    m_driveMotor.config_kD(
+        0, prefs.tryGetValue(prefs::getDouble, "SwerveFalconsDriveD", DEFAULT_DRIVE_D));
+    m_driveMotor.config_kF(
+        0, prefs.tryGetValue(prefs::getDouble, "SwerveFalconsDriveFF", DEFAULT_DRIVE_FF));
+    m_turningMotor.config_kP(
+        0, prefs.tryGetValue(prefs::getDouble, "SwerveFalconsTurnP", DEFAULT_TURN_P));
+    m_turningMotor.config_kI(
+        0, prefs.tryGetValue(prefs::getDouble, "SwerveFalconsTurnI", DEFAULT_TURN_I));
+    m_turningMotor.config_kD(
+        0, prefs.tryGetValue(prefs::getDouble, "SwerveFalconsTurnD", DEFAULT_TURN_D));
     modulePosition = parameters.modulePosition.toString();
     zeroTurnMotors();
 
@@ -189,22 +196,30 @@ public class SwerveModuleFalcons implements ISwerveModule {
     stopped = false;
   }
 
-  /** @return The analog input value of the encoder for the rotation motor */
+  /**
+   * @return The analog input value of the encoder for the rotation motor
+   */
   public double getAngleTicks() {
     return (m_turningMotor.getSelectedSensorPosition() * TURN_STEER_REDUCTION);
   }
 
-  /** @return The angle of the module's wheel in radians */
+  /**
+   * @return The angle of the module's wheel in radians
+   */
   public double getAngleRadians() {
     return getAngleTicks() * 2 * Math.PI / ENCODER_TICKS_PER_ROTATION;
   }
 
-  /** @return The angle of the module within the range [0, 2pi) */
+  /**
+   * @return The angle of the module within the range [0, 2pi)
+   */
   public double getAbsoluteAngleRadians() {
     return getAngleRadians() % (2.0 * Math.PI);
   }
 
-  /** @return The angle of the module's wheels in degrees */
+  /**
+   * @return The angle of the module's wheels in degrees
+   */
   public double getAbsoluteAngleDegrees() {
     return (getAngleTicks() * 360 / ENCODER_TICKS_PER_ROTATION) % (360);
   }
@@ -213,7 +228,9 @@ public class SwerveModuleFalcons implements ISwerveModule {
     return desiredModuleAngle;
   }
 
-  /** @return The rpm of the drive motor */
+  /**
+   * @return The rpm of the drive motor
+   */
   public double getSpeedNative() {
     return m_driveMotor.getSelectedSensorVelocity() * (60 * 10) / ENCODER_TICKS_PER_ROTATION;
   }
@@ -222,7 +239,9 @@ public class SwerveModuleFalcons implements ISwerveModule {
     return desiredModuleSpeed;
   }
 
-  /** @return The speed of the module's wheel in meters/sec */
+  /**
+   * @return The speed of the module's wheel in meters/sec
+   */
   public double getSpeed() {
     return (getSpeedNative() / (60 * gearRatio)) * Math.PI * kWheelDiameter;
   }

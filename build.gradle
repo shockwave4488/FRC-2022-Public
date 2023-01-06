@@ -7,6 +7,10 @@ plugins {
     id 'com.github.spotbugs' version '5.0.4'
 }
 
+repositories {
+    mavenCentral()
+}
+
 sourceCompatibility = JavaVersion.VERSION_11
 targetCompatibility = JavaVersion.VERSION_11
 
@@ -73,6 +77,7 @@ dependencies {
 
     compileOnly "com.github.spotbugs:spotbugs-annotations:${spotbugs.toolVersion.get()}"
 
+    implementation group: 'edu.wpi.first.apriltags', name: 'apriltags-java', version: '2023.1.1-beta-4'
     implementation group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1.1'
     implementation group: 'gov.nist.math', name: 'jama', version: '1.0.3'
     testImplementation group: 'org.powermock', name: 'powermock-api-mockito2', version: '2.0.9'
@@ -104,6 +109,10 @@ spotbugsMain {
     excludeFilter = file('spotbugsExclusions.xml')
 }
 
+googleJavaFormat {
+    toolVersion = '1.15.0'
+}
+
 tasks.withType(com.github.spotbugs.snom.SpotBugsTask) {
     reports {
         xml {
@@ -113,4 +122,41 @@ tasks.withType(com.github.spotbugs.snom.SpotBugsTask) {
             required.set(true)
         }
     }
+}
+
+class SetSimulationConfig extends DefaultTask {
+    @InputDirectory
+    File configDir
+
+    SetSimulationConfig () {
+        description  = 'Sets the configuration directory to use in simulation and simulates the robot code'
+    }
+
+    @Option(option = 'configDir', description = 'Set the directory of the preferences/robot configuration.')
+    void setConfigDir(final String dir) {
+        configDir = project.file(dir)
+    }
+
+    @TaskAction
+    def writeDirToFile() {
+        if (!List.of(configDir.list()).contains('Preferences.json')) {
+            throw new IllegalArgumentException('No preferences file in directory: ' + configDir)
+        }
+        
+        File simPrefsPathFile = project.file('simulation/configDir.txt')
+        if (!simPrefsPathFile.exists()) {
+            if (!simPrefsPathFile.getParentFile().exists()) {
+                simPrefsPathFile.getParentFile().mkdirs()
+            }
+            simPrefsPathFile.createNewFile()
+        } else {
+            simPrefsPathFile.text = ''
+        }
+
+        simPrefsPathFile << configDir
+    }
+}
+
+tasks.register('simulate', SetSimulationConfig) {
+    finalizedBy simulateJava
 }

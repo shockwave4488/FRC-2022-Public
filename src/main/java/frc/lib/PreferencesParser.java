@@ -1,142 +1,69 @@
 package frc.lib;
 
+import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.wpilibj.RobotBase;
 import frc.lib.logging.Logger;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.function.Function;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 public class PreferencesParser {
-
-  private FileReader fileReader;
-  private JSONObject json;
-  private JSONParser jsonParser;
-  private Path preferencesPath = Paths.get(System.getProperty("user.home"), "Preferences.json");
-  private String preferencesPathString = preferencesPath.toString();
+  private final JSONObject json;
   private final Logger logger;
+  private static final String PREFS_STRING = "Preferences.json";
+  private static final String PREFS_DIR_FILE_STRING = "configDir.txt";
 
   public PreferencesParser(Logger logger) {
-    jsonParser = new JSONParser();
-    update();
     this.logger = logger;
-  }
+    JSONParser jsonParser = new JSONParser();
+    String preferencesPathString;
 
-  public String getString(String key) throws PreferenceDoesNotExistException {
-    update();
-    if (keyExists(key)) {
-      return (String) json.get(key);
-    }
+    boolean robotIsReal = RobotBase.isReal();
 
-    System.out.println("Key " + key + " does not exist in preferences!");
-    logger.writeRaw("Key " + key + " does not exist in preferences!");
-    throw new PreferenceDoesNotExistException(key);
-  }
+    Path baseDir = Filesystem.getOperatingDirectory().toPath();
+    Path prefsDir =
+        baseDir.resolve(
+            (!robotIsReal ? "simulation" + File.separator : "") + PREFS_DIR_FILE_STRING);
 
-  public String tryGetString(String key, String defaultString) {
+    String prefsDirString = "";
     try {
-      return getString(key);
-    } catch (PreferenceDoesNotExistException e) {
-      return defaultString;
-    }
-  }
-
-  public boolean getBoolean(String key) throws PreferenceDoesNotExistException {
-    update();
-    if (keyExists(key)) {
-      return Boolean.parseBoolean(json.get(key).toString());
-    }
-
-    System.out.println("Key " + key + " does not exist in preferences!");
-    logger.writeRaw("Key " + key + " does not exist in preferences!");
-    throw new PreferenceDoesNotExistException(key);
-  }
-
-  public int getInt(String key) throws PreferenceDoesNotExistException {
-    update();
-    if (keyExists(key)) {
-      return ((Long) json.get(key)).intValue();
+      prefsDirString = Files.readString(prefsDir);
+    } catch (IOException e) {
+      System.out.print(
+          "Could not find preferences directory from "
+              + prefsDir.toAbsolutePath().toString()
+              + ". ");
+      if (robotIsReal) {
+        System.out.println(
+            "Did you forget to send a 'configDir.txt' file containing the prefs location to the RoboRIO's home directory?");
+      } else {
+        System.out.println(
+            "Did you forget to run './gradlew simulate' to specify the prefs location?");
+      }
     }
 
-    System.out.println("Key " + key + " does not exist in preferences!");
-    logger.writeRaw("Key " + key + " does not exist in preferences!");
-    throw new PreferenceDoesNotExistException(key);
-  }
-
-  public int tryGetInt(String key, int defaultInt) {
-    try {
-      return getInt(key);
-    } catch (PreferenceDoesNotExistException e) {
-      return defaultInt;
-    }
-  }
-
-  public double getDouble(String key) throws PreferenceDoesNotExistException {
-    update();
-    if (keyExists(key)) {
-      return ((Number) json.get(key)).doubleValue();
+    if (robotIsReal) {
+      preferencesPathString =
+          Filesystem.getDeployDirectory()
+              .toPath()
+              .resolve(prefsDirString + File.separator + PREFS_STRING)
+              .toString();
+    } else {
+      preferencesPathString = Path.of(prefsDirString, PREFS_STRING).toString();
     }
 
-    System.out.println("Key " + key + " does not exist in preferences!");
-    logger.writeRaw("Key " + key + " does not exist in preferences!");
-    throw new PreferenceDoesNotExistException(key);
-  }
-
-  public double tryGetDouble(String key, double defaultDouble) {
-    try {
-      return getDouble(key);
-    } catch (PreferenceDoesNotExistException e) {
-      return defaultDouble;
-    }
-  }
-
-  public boolean tryGetBoolean(String key, boolean defaultBoolean) {
-    try {
-      return getBoolean(key);
-    } catch (PreferenceDoesNotExistException e) {
-      return defaultBoolean;
-    }
-  }
-
-  private boolean keyExists(String key) {
-    if (json.get(key) == null) {
-      return false;
-    }
-
-    return true;
-  }
-
-  public JSONObject getJSONObject(String key) throws PreferenceDoesNotExistException {
-    update();
-    if (keyExists(key)) {
-      return (JSONObject) json.get(key);
-    }
-
-    System.out.println("Key " + key + " does not exist in preferences!");
-    logger.writeRaw("Key " + key + " does not exist in preferences!");
-    throw new PreferenceDoesNotExistException(key);
-  }
-
-  public JSONObject tryGetJSONObject(String key, JSONObject defaultObject) {
-    try {
-      return getJSONObject(key);
-    } catch (PreferenceDoesNotExistException e) {
-      return defaultObject;
-    }
-  }
-
-  private void update() {
-    try {
-      fileReader = new FileReader(preferencesPathString, Charset.forName("UTF-8"));
-
+    JSONObject jsonTemp = new JSONObject();
+    try (FileReader fileReader = new FileReader(preferencesPathString, Charset.forName("UTF-8"))) {
       Object obj = jsonParser.parse(fileReader);
-      json = (JSONObject) obj;
-
-      fileReader.close();
+      jsonTemp = (JSONObject) obj;
     } catch (FileNotFoundException e) {
       System.out.println("Could not find preferences file at " + preferencesPathString);
       logger.writeRaw("Could not find preferences file at " + preferencesPathString);
@@ -145,6 +72,60 @@ public class PreferencesParser {
       logger.writeRaw("IOException in PreferencesParser");
     } catch (ParseException e) {
       e.printStackTrace();
+    }
+
+    json = jsonTemp;
+  }
+
+  private boolean keyExists(String key) {
+    return json.get(key) != null;
+  }
+
+  public String getString(String key) throws PreferenceDoesNotExistException {
+    if (keyExists(key)) {
+      return (String) json.get(key);
+    }
+
+    throw new PreferenceDoesNotExistException(key, logger);
+  }
+
+  public boolean getBoolean(String key) throws PreferenceDoesNotExistException {
+    if (keyExists(key)) {
+      return Boolean.parseBoolean(json.get(key).toString());
+    }
+
+    throw new PreferenceDoesNotExistException(key, logger);
+  }
+
+  public int getInt(String key) throws PreferenceDoesNotExistException {
+    if (keyExists(key)) {
+      return ((Long) json.get(key)).intValue();
+    }
+
+    throw new PreferenceDoesNotExistException(key, logger);
+  }
+
+  public double getDouble(String key) throws PreferenceDoesNotExistException {
+    if (keyExists(key)) {
+      return ((Number) json.get(key)).doubleValue();
+    }
+
+    throw new PreferenceDoesNotExistException(key, logger);
+  }
+
+  public JSONObject getJSONObject(String key) throws PreferenceDoesNotExistException {
+    if (keyExists(key)) {
+      return (JSONObject) json.get(key);
+    }
+
+    throw new PreferenceDoesNotExistException(key, logger);
+  }
+
+  public <T> T tryGetValue(Function<String, T> valueGetter, String key, T defaultValue) {
+    try {
+      return valueGetter.apply(key);
+    } catch (PreferenceDoesNotExistException e) {
+      return defaultValue;
     }
   }
 }

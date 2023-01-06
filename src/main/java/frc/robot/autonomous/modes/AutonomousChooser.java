@@ -13,16 +13,17 @@ import edu.wpi.first.wpilibj2.command.CommandGroupBase;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
+import frc.lib.PreferencesParser;
 import frc.lib.logging.Logger;
-import frc.lib.sensors.Limelight;
 import frc.lib.sensors.NavX;
+import frc.lib.sensors.vision.Limelight;
 import frc.robot.Constants.AutonomousConstants;
 import frc.robot.Constants.DriveTrainConstants;
 import frc.robot.commands.c2022.defaults.DefaultIndexerLoad;
 import frc.robot.commands.c2022.drive.LockedSwerveDrive;
 import frc.robot.commands.c2022.drive.RotateToAngle;
+import frc.robot.commands.c2022.drive.SwerveDriveToPosition;
 import frc.robot.commands.c2022.drive.SwerveDriveWithHeading;
 import frc.robot.commands.c2022.drive.SwerveTurnToHUB;
 import frc.robot.commands.c2022.intake.ColorIntake;
@@ -40,11 +41,9 @@ import frc.robot.subsystems.drive.SwerveDrive;
 import java.util.function.Supplier;
 
 public class AutonomousChooser {
+  private final AutoPIDControllerContainer pidControllers;
   private final AutonomousTrajectories trajectories;
   private final SwerveDrive swerve;
-  private final ProfiledPIDController thetaController;
-  private final PIDController posPIDX;
-  private final PIDController posPIDY;
   private final Intake intake;
   private final Shooter shooter;
   private final Indexer indexer;
@@ -59,6 +58,22 @@ public class AutonomousChooser {
   private SendableChooser<AutonomousMode> autonomousModeChooser = new SendableChooser<>();
   private SendableChooser<IntakeMode> colorIntakeToggle = new SendableChooser<>();
 
+  public static class AutoPIDControllerContainer {
+    public final PIDController xPidController;
+    public final PIDController yPidController;
+    public final ProfiledPIDController thetaPidController;
+
+    public AutoPIDControllerContainer(
+        PIDController xPidController,
+        PIDController yPidController,
+        ProfiledPIDController thetaPidController) {
+      this.xPidController = xPidController;
+      this.yPidController = yPidController;
+      this.thetaPidController = thetaPidController;
+      this.thetaPidController.enableContinuousInput(-Math.PI, Math.PI);
+    }
+  }
+
   public AutonomousChooser(
       AutonomousTrajectories trajectories,
       SwerveDrive swerve,
@@ -68,7 +83,8 @@ public class AutonomousChooser {
       SmartPCM smartPCM,
       NavX gyro,
       Limelight limelight,
-      Logger logger) {
+      Logger logger,
+      PreferencesParser prefs) {
     this.swerve = swerve;
     this.intake = intake;
     this.shooter = shooter;
@@ -82,25 +98,21 @@ public class AutonomousChooser {
     this.logger = logger;
     this.trajectories = trajectories;
 
-    posPIDX =
-        new PIDController(
-            AutonomousConstants.POS_X_PATH_P,
-            AutonomousConstants.POS_X_PATH_I,
-            AutonomousConstants.POS_X_PATH_D);
-    posPIDY =
-        new PIDController(
-            AutonomousConstants.POS_Y_PATH_P,
-            AutonomousConstants.POS_Y_PATH_I,
-            AutonomousConstants
-                .POS_Y_PATH_D); // Need to reference constants or read from prefs when set
-
-    thetaController =
-        new ProfiledPIDController(
-            AutonomousConstants.AUTO_TURN_P,
-            0,
-            0,
-            new TrapezoidProfile.Constraints(2 * Math.PI, 2 * Math.PI));
-    thetaController.enableContinuousInput(-Math.PI, Math.PI);
+    pidControllers =
+        new AutoPIDControllerContainer(
+            new PIDController(
+                prefs.getDouble("AutoPosPathP"),
+                prefs.getDouble("AutoPosPathI"),
+                prefs.getDouble("AutoPosPathD")),
+            new PIDController(
+                prefs.getDouble("AutoPosPathP"),
+                prefs.getDouble("AutoPosPathI"),
+                prefs.getDouble("AutoPosPathD")),
+            new ProfiledPIDController(
+                prefs.getDouble("AutoTurnP"),
+                0,
+                0,
+                new TrapezoidProfile.Constraints(2 * Math.PI, 2 * Math.PI)));
 
     autonomousModeChooser.addOption("Off Tarmac Auto", AutonomousMode.DRIVE_OFF_TARMAC);
     autonomousModeChooser.addOption("One Ball Auto Mid", AutonomousMode.ONE_BALL_MID);
@@ -426,33 +438,14 @@ public class AutonomousChooser {
   }
 
   private void followTrajectory(SequentialCommandGroup command, Trajectory trajectory) {
-    command.addCommands(
-        new SwerveControllerCommand(
-            trajectory,
-            swerve::getOdometry, // Functional interface to feed supplier
-            swerve.getKinematics(),
-            // Position controllers
-            posPIDX,
-            posPIDY,
-            thetaController,
-            swerve::setModuleStates,
-            swerve));
+    command.addCommands(new SwerveDriveToPosition(swerve, pidControllers, () -> trajectory));
   }
 
   private void followTrajectoryAndIntakeForced(
       SequentialCommandGroup command, Trajectory trajectory, IntakeMode intakeMode) {
     ParallelDeadlineGroup intakeAndDriveCommand =
         new ParallelDeadlineGroup(
-            new SwerveControllerCommand(
-                trajectory,
-                swerve::getOdometry, // Functional interface to feed supplier
-                swerve.getKinematics(),
-                // Position controllers
-                posPIDX,
-                posPIDY,
-                thetaController,
-                swerve::setModuleStates,
-                swerve));
+            new SwerveDriveToPosition(swerve, pidControllers, () -> trajectory));
     if (intake != null) {
       intakeAndDriveCommand.addCommands(getIntakeCommand(intakeMode));
     }
@@ -538,23 +531,18 @@ public class AutonomousChooser {
       IntakeMode intakeMode) {
     ParallelDeadlineGroup driveAndPreSpinShooterCommand =
         new ParallelDeadlineGroup(
-            new SwerveControllerCommand(
-                trajectory,
-                swerve::getOdometry, // Functional interface to feed supplier
-                swerve.getKinematics(),
-                posPIDX,
-                posPIDY,
-                thetaController,
+            new SwerveDriveToPosition(
+                swerve,
+                pidControllers,
+                () -> trajectory,
                 () ->
                     limelight.getDesiredAngle(
-                        gyro.getYaw().getDegrees(),
+                        limelight.getBestTarget().get(),
+                        gyro.getYaw(),
                         trajectory
                             .sample(trajectory.getTotalTimeSeconds())
                             .poseMeters
-                            .getRotation()
-                            .getDegrees()),
-                swerve::setModuleStates,
-                swerve));
+                            .getRotation())));
     if (intake != null) {
       driveAndPreSpinShooterCommand.addCommands(getIntakeCommand(intakeMode));
     }

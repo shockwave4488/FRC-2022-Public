@@ -24,7 +24,9 @@ public class ClimberHighRungPitchless extends CommandBase {
 
     int height;
 
-    /** @param height The tick value you want to the climber to be at */
+    /**
+     * @param height The tick value you want to the climber to be at
+     */
     private HighRungClimbState(int height) {
       this.height = height;
     }

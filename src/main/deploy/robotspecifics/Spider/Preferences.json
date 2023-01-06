@@ -1,0 +1,6 @@
+{
+    "RobotName": "Spider",
+    "PCM_ID": 0,
+    "ClimberSolenoidExtendID": 1,
+    "ClimberSolenoidRetractID": 0
+}

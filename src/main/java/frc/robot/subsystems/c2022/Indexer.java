@@ -137,10 +137,10 @@ public class Indexer extends ShockwaveSubsystemBase {
   }
 
   public void updateFromPrefs() {
-    p = prefs.tryGetDouble("IndexerP", 0);
-    i = prefs.tryGetDouble("IndexerI", 0);
-    d = prefs.tryGetDouble("IndexerD", 0);
-    f = prefs.tryGetDouble("IndexerF", 0);
+    p = prefs.tryGetValue(prefs::getDouble, "IndexerP", 0.0);
+    i = prefs.tryGetValue(prefs::getDouble, "IndexerI", 0.0);
+    d = prefs.tryGetValue(prefs::getDouble, "IndexerD", 0.0);
+    f = prefs.tryGetValue(prefs::getDouble, "IndexerF", 0.0);
 
     updatePIDF(p, i, d, f);
   }

@@ -1,0 +1,66 @@
+{
+    "RobotName": "Candy",
+    "AutoPosPathP": 4.6,
+    "AutoPosPathI": 0.0,
+    "AutoPosPathD": 0.0,
+    "AutoTurnP": 5.0,
+    "SwerveFalconsDriveP":0.00005,
+    "SwerveFalconsDriveI":0,
+    "SwerveFalconsDriveD":0,
+    "SwerveFalconsDriveFF":0.055,
+    "SwerveFalconsTurnP":0.3,
+    "SwerveFalconsTurnI":0,
+    "SwerveFalconsTurnD":0,
+    "SwerveParametersFL": {
+        "driveMotorChannel":5,
+        "turningMotorChannel":4,
+        "turningEncoderChannel":2,
+        "potOffset":2011,
+        "potResolution":4096,
+        "wheelDiameter":0.1016,
+        "driveGearRatio":8,
+        "modPosition":"FRONT_LEFT"
+    },
+    "SwerveParametersFR": {
+        "driveMotorChannel":3,
+        "turningMotorChannel":2,
+        "turningEncoderChannel":1,
+        "potOffset":3499,
+        "potResolution":4096,
+        "wheelDiameter":0.1016,
+        "driveGearRatio":8,
+        "modPosition":"FRONT_RIGHT"
+    },
+    "SwerveParametersBL": {
+        "driveMotorChannel":7,
+        "turningMotorChannel":6,
+        "turningEncoderChannel":3,
+        "potOffset":2146,
+        "potResolution":4096,
+        "wheelDiameter":0.1016,
+        "driveGearRatio":8,
+        "modPosition":"BACK_LEFT"
+    },
+    "SwerveParametersBR": {
+        "driveMotorChannel":1,
+        "turningMotorChannel":10,
+        "turningEncoderChannel":0,
+        "potOffset":3838,
+        "potResolution":4096,
+        "wheelDiameter":0.1016,
+        "driveGearRatio":8,
+        "modPosition":"BACK_RIGHT"
+    },
+    "PCM_ID": 0,
+    "LimelightConstants": {
+        "Name": "gloworm",
+        "Position": {
+	    "X": 0.203,
+	    "Y": 0.267,
+	    "Z": 0.47,
+	    "Roll": 0,
+	    "Pitch": 0,
+	    "Yaw": 0
+        }
+    }
+}

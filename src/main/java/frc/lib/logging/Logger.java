@@ -1,14 +1,14 @@
 package frc.lib.logging;
 
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -21,12 +21,15 @@ public class Logger {
   private BufferedWriter mainWriter;
   private ArrayList<Tracker> trackers = new ArrayList<Tracker>();
   private ArrayList<StringTracker> stringTrackers = new ArrayList<StringTracker>();
-  private Path loggingPath = Paths.get(System.getProperty("user.home"), "logs");
-  private String startPath = "/home/lvuser/logs";
+  // private Path loggingPath = Paths.get(System.getProperty("user.home"), "logs");
+  private String startPath =
+      Filesystem.getOperatingDirectory()
+          + (!RobotBase.isReal() ? File.separator + "simulation" : "")
+          + File.separator
+          + "logs";
   private final SimpleDateFormat sdfdate = new SimpleDateFormat("yyyy-MM-dd");
   private final SimpleDateFormat sdftime = new SimpleDateFormat("HH-mm-ss-SSSS");
-  private static final String pathSeparator = "/";
-  private static final int frequencyCap = 100;
+  private static final int FREQUENCY_CAP = 100;
 
   public Logger() {}
 
@@ -41,11 +44,16 @@ public class Logger {
     }
 
     fullPath =
-        startPath + pathSeparator + date + pathSeparator + (matchType + matchNumber) + timeStamp();
+        startPath
+            + File.separator
+            + date
+            + File.separator
+            + (matchType + matchNumber)
+            + timeStamp();
 
     System.out.println("Logging full path: " + fullPath);
     System.out.println("Logging start of path: " + startPath);
-    System.out.println("Logging old start of path: " + loggingPath.toString());
+    // System.out.println("Logging old start of path: " + loggingPath.toString());
 
     File directory = new File(fullPath);
     if (!directory.exists()) {
@@ -60,7 +68,8 @@ public class Logger {
 
     try {
       mainWriter =
-          new BufferedWriter(new FileWriter(fullPath + "/main.txt", Charset.forName("UTF-8")));
+          new BufferedWriter(
+              new FileWriter(fullPath + File.separator + "main.txt", Charset.forName("UTF-8")));
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -146,9 +155,7 @@ public class Logger {
     if (header.isEmpty()) {
       header = "Timestamp (seconds),Message";
     }
-    if (frequency > frequencyCap) {
-      frequency = frequencyCap;
-    }
+    frequency = Math.min(frequency, FREQUENCY_CAP);
     StringTracker newStringTracker = new StringTracker(target, name, frequency, header);
     stringTrackers.add(newStringTracker);
   }
