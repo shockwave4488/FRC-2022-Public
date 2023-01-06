@@ -5,6 +5,8 @@
 package frc.robot;
 
 import edu.wpi.first.math.geometry.Translation2d;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide numerical or boolean
@@ -74,19 +76,10 @@ public final class Constants {
         0.63; // This is the distance between the center of the HUB and the INSIDE edge (0.61) plus
     // 0.02 (for the width of what the reflective tape is on, this is an approximation).
     public static final double HUB_SAFE_SHOT_RADIUS_METERS = 0.3; // 0.4 -> 0.3
+    public static final double TARGET_HEIGHT_METERS = 2.62;
   }
 
   public static final class AutonomousConstants {
-    public static final double POS_X_PATH_P = 4.6;
-    public static final double POS_X_PATH_I = 0.0;
-    public static final double POS_X_PATH_D = 0.0;
-
-    public static final double POS_Y_PATH_P = 4.6;
-    public static final double POS_Y_PATH_I = 0.0;
-    public static final double POS_Y_PATH_D = 0.0;
-
-    public static final double AUTO_TURN_P = 5;
-
     public static final double PRACTICE_SHOOTER_RPM_OUTSIDE_TARMAC = 1500;
     public static final double PRACTICE_SHOOTER_RPM_INSIDE_TARMAC = 1500; // 2800 when in comp
 
@@ -103,7 +96,11 @@ public final class Constants {
     public static final int ledDio3 = 13;
   }
 
-  public static final class UnitConversionConstants {
-    public static final double INCHES_TO_METERS = 0.0254;
+  public static final class MockBuildWeek2023Constants {
+    public static final List<Integer> cubeTagIds =
+        Collections.unmodifiableList(List.of(0, 5, 7, 26, 29));
+    public static final List<Integer> stationTagIds =
+        Collections.unmodifiableList(List.of(2, 6, 12, 20));
+    public static final int HUMAN_PLAYER_STATION_TAG_ID = 10;
   }
 }

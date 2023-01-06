@@ -3,7 +3,7 @@ package frc.robot.commands.c2022.defaults;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import frc.lib.sensors.Limelight;
+import frc.lib.sensors.vision.Limelight;
 import frc.robot.commands.c2022.shooter.SpinFlywheel;
 import frc.robot.subsystems.c2022.Indexer;
 import frc.robot.subsystems.c2022.Shooter;

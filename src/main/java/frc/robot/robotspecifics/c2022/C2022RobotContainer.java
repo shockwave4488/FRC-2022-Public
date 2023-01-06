@@ -4,6 +4,9 @@ import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -21,9 +24,9 @@ import frc.lib.operator.CircularDeadzone;
 import frc.lib.operator.I2DDeadzoneCalculator;
 import frc.lib.operator.IDeadzoneCalculator;
 import frc.lib.operator.SquareDeadzoneCalculator;
-import frc.lib.sensors.Limelight;
-import frc.lib.sensors.Limelight.DistanceEstimationConstants;
 import frc.lib.sensors.NavX;
+import frc.lib.sensors.vision.Limelight;
+import frc.lib.sensors.vision.VisionCamera.CameraPositionConstants;
 import frc.robot.Constants;
 import frc.robot.Constants.DriveTrainConstants;
 import frc.robot.Constants.OIConstants;
@@ -81,7 +84,6 @@ public class C2022RobotContainer extends BaseRobotContainer {
   private final ISwerveModule m_backLeft;
   private final ISwerveModule m_backRight;
   private final Limelight shooterLimelight;
-  private final DistanceEstimationConstants shooterLimelightDistEstConstants;
   private final Shooter shooter;
   private final Climber climber;
   private final Indexer indexer;
@@ -112,13 +114,18 @@ public class C2022RobotContainer extends BaseRobotContainer {
     };
   }
 
-  private DistanceEstimationConstants getShooterLimelightConstants() {
-    JSONObject shooterLimelightDistEstConstantsJSON =
-        prefs.getJSONObject("LimelightShooterConstants");
-    return new DistanceEstimationConstants(
-        ((Number) shooterLimelightDistEstConstantsJSON.get("camHeight")).doubleValue(),
-        ((Number) shooterLimelightDistEstConstantsJSON.get("targetHeight")).doubleValue(),
-        ((Number) shooterLimelightDistEstConstantsJSON.get("camToNormalAngle")).doubleValue());
+  private CameraPositionConstants getShooterLimelightConstants() {
+    JSONObject limelightConstantsJSON = prefs.getJSONObject("LimelightShooterConstants");
+    return new CameraPositionConstants(
+        new Transform3d(
+            new Translation3d(
+                ((Number) limelightConstantsJSON.get("X")).doubleValue(),
+                ((Number) limelightConstantsJSON.get("Y")).doubleValue(),
+                ((Number) limelightConstantsJSON.get("Z")).doubleValue()),
+            new Rotation3d(
+                Math.toRadians(((Number) limelightConstantsJSON.get("Roll")).doubleValue()),
+                Math.toRadians(((Number) limelightConstantsJSON.get("Pitch")).doubleValue()),
+                Math.toRadians(((Number) limelightConstantsJSON.get("Yaw")).doubleValue()))));
   }
 
   /**
@@ -138,13 +145,9 @@ public class C2022RobotContainer extends BaseRobotContainer {
     m_backLeft = new SwerveModuleFalcons(swerveParameters[2], logger, prefs);
     m_backRight = new SwerveModuleFalcons(swerveParameters[3], logger, prefs);
 
-    shooterLimelightDistEstConstants = getShooterLimelightConstants(); // 21, 103, 14
-    /* The middle of the hub vision targets (above) are 103 inches off the ground, the other two values are just estimates.
-    We also need to consider using an interpolation table instead of the above */
-
     shooterLimelight =
         new Limelight(
-            prefs.getString("LimelightShooterName"), shooterLimelightDistEstConstants, logger);
+            prefs.getString("LimelightShooterName"), getShooterLimelightConstants(), logger);
 
     shooter =
         new Shooter(
@@ -218,7 +221,8 @@ public class C2022RobotContainer extends BaseRobotContainer {
             smartPCM,
             m_gyro,
             shooterLimelight,
-            logger);
+            logger,
+            prefs);
 
     addSubsystems();
     configureButtonBindings();

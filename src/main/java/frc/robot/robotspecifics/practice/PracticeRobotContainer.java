@@ -1,4 +1,4 @@
-package frc.robot.robotspecifics.swerve;
+package frc.robot.robotspecifics.practice;
 
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
@@ -6,6 +6,7 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.lib.BaseRobotContainer;
 import frc.lib.PreferencesParser;
@@ -28,9 +29,10 @@ import frc.robot.commands.c2022.defaults.DefaultSwerveDrive;
 import frc.robot.commands.c2022.drive.LockedSwerveDrive;
 import frc.robot.commands.c2022.drive.SwerveTurnToHUB;
 import frc.robot.commands.c2022.drive.VisionAlignToTarget;
+import frc.robot.subsystems.c2022.SmartPCM;
 import frc.robot.subsystems.drive.ISwerveModule;
 import frc.robot.subsystems.drive.SwerveDrive;
-import frc.robot.subsystems.drive.SwerveModuleNeos;
+import frc.robot.subsystems.drive.SwerveModuleFalcons;
 import org.json.simple.JSONObject;
 
 /**
@@ -39,7 +41,7 @@ import org.json.simple.JSONObject;
  * periodic methods (other than the scheduler calls). Instead, the structure of the robot (including
  * subsystems, commands, and button mappings) should be declared here.
  */
-public class SwerveRobotContainer extends BaseRobotContainer {
+public class PracticeRobotContainer extends BaseRobotContainer {
   private final NavX m_gyro;
   private final SwerveDrive swerve;
   private final SwerveParameters[] swerveParameters;
@@ -51,7 +53,8 @@ public class SwerveRobotContainer extends BaseRobotContainer {
   private final ISwerveModule m_backLeft;
   private final ISwerveModule m_backRight;
   private final Limelight limelight;
-  private AutonomousChooser autonomousChooser;
+  private final SmartPCM smartPCM;
+  private final AutonomousChooser autonomousChooser;
 
   private SwerveParameters[] getSwerveParameters() {
     JSONObject swerveParametersJSONFL = prefs.getJSONObject("SwerveParametersFL");
@@ -92,17 +95,19 @@ public class SwerveRobotContainer extends BaseRobotContainer {
    * The robot container for our basic swerve drive robot, this is where all classes relevant to
    * this robot are created and where its default command(s) are set
    */
-  public SwerveRobotContainer(PreferencesParser prefs, Logger logger) {
+  public PracticeRobotContainer(PreferencesParser prefs, Logger logger) {
     super(prefs, logger);
 
     m_gyro = new NavX(SPI.Port.kMXP);
     circularDeadzone = new CircularDeadzone(OIConstants.DEFAULT_CONTROLLER_DEADZONE);
     squareDeadzone = new SquareDeadzoneCalculator(OIConstants.DEFAULT_CONTROLLER_DEADZONE);
     swerveParameters = getSwerveParameters();
-    m_frontLeft = new SwerveModuleNeos(swerveParameters[0], logger, prefs);
-    m_frontRight = new SwerveModuleNeos(swerveParameters[1], logger, prefs);
-    m_backLeft = new SwerveModuleNeos(swerveParameters[2], logger, prefs);
-    m_backRight = new SwerveModuleNeos(swerveParameters[3], logger, prefs);
+    m_frontLeft = new SwerveModuleFalcons(swerveParameters[0], logger, prefs);
+    m_frontRight = new SwerveModuleFalcons(swerveParameters[1], logger, prefs);
+    m_backLeft = new SwerveModuleFalcons(swerveParameters[2], logger, prefs);
+    m_backRight = new SwerveModuleFalcons(swerveParameters[3], logger, prefs);
+
+    smartPCM = new SmartPCM(prefs.getInt("PCM_ID"));
 
     swerve = new SwerveDrive(m_gyro, getSwerveModules(), logger);
     driverJoystick = new XboxController(OIConstants.DRIVER_CONTROLLER_PORT);
@@ -125,6 +130,9 @@ public class SwerveRobotContainer extends BaseRobotContainer {
             prefs);
 
     swerve.setDefaultCommand(getNewDefaultSwerveDriveCommand());
+    smartPCM.setDefaultCommand(
+        new StartEndCommand(() -> smartPCM.startCompressor(), () -> {}, smartPCM)
+            .withName("CompressorCommand"));
 
     addSubsystems();
     configureButtonBindings();
@@ -133,6 +141,7 @@ public class SwerveRobotContainer extends BaseRobotContainer {
   protected void addSubsystems() {
     subsystems.add(swerve);
     subsystems.add(limelight);
+    subsystems.add(smartPCM);
   }
 
   protected void configureButtonBindings() {

@@ -3,8 +3,8 @@ package frc.robot.commands.c2022.drive;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj2.command.CommandBase;
-import frc.lib.sensors.Limelight;
 import frc.lib.sensors.NavX;
+import frc.lib.sensors.vision.Limelight;
 import frc.robot.Constants;
 import frc.robot.Constants.DriveTrainConstants;
 import frc.robot.subsystems.drive.SwerveDrive;
@@ -96,7 +96,8 @@ public class SwerveTurnToHUB extends CommandBase {
 
   // Not removing this again in case we need to use it again.
   private boolean closeEnoughAndSeesTarget() {
-    return ((Math.abs(currentAngle - targetAngle) < CLOSE_ENOUGH_DEGREES) && limelight.hasTarget());
+    return ((Math.abs(currentAngle - targetAngle) < CLOSE_ENOUGH_DEGREES)
+        && limelight.hasTargets());
   }
 
   public boolean isFinished() {

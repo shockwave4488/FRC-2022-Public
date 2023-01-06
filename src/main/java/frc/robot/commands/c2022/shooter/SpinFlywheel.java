@@ -3,7 +3,8 @@ package frc.robot.commands.c2022.shooter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.lib.flowcontrol.EdgeTrigger;
-import frc.lib.sensors.Limelight;
+import frc.lib.sensors.vision.Limelight;
+import frc.lib.sensors.vision.VisionCamera.CameraPositionConstants;
 import frc.robot.Constants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.subsystems.c2022.Indexer;
@@ -15,6 +16,7 @@ public class SpinFlywheel extends CommandBase {
   private final Limelight limelight;
   private final Indexer indexer;
   private final Supplier<Pose2d> pose;
+  private final CameraPositionConstants cameraConsts;
 
   private final boolean estimate;
   private final boolean end;
@@ -26,12 +28,6 @@ public class SpinFlywheel extends CommandBase {
   private static final double FALLBACK_HOOD_INPUT =
       Constants.ShooterConstants.BACK_OF_TARMAC_HOOD_INPUT;
   private EdgeTrigger flywheelBB = new EdgeTrigger();
-
-  // Should be moved to/taken from prefs.
-  private static final double GROUND_TO_TAPE = 103;
-  private static final double CAM_HEIGHT = 41;
-  private static final double LIMELIGHT_ANGLE = 25;
-  private static final double METERS_TO_INCHES = 39.37;
 
   public SpinFlywheel(
       Shooter shooter,
@@ -45,6 +41,7 @@ public class SpinFlywheel extends CommandBase {
     this.limelight = limelight;
     this.indexer = indexer;
     this.pose = pose;
+    cameraConsts = limelight.getCameraPositionConsts();
     this.estimate = estimate;
     this.end = end;
     this.interpolateShooter = interpolateShooter;
@@ -57,7 +54,7 @@ public class SpinFlywheel extends CommandBase {
     spinToSpeed();
     /*
     if (limelight != null) {
-      limelight.setLed(LedControl.ForceOn);
+      limelight.setLed(VisionLEDMode.kOn);
     }
     */
     flywheelBB.update(indexer.getIndexerStates().getFlywheelBeamBreak());
@@ -90,8 +87,8 @@ public class SpinFlywheel extends CommandBase {
     double speed;
     double yOffset;
 
-    if (limelight.hasTarget()) {
-      yOffset = limelight.getY();
+    if (limelight.hasTargets()) {
+      yOffset = limelight.getBestTarget().get().getY().getDegrees();
     } else {
       if (estimate) {
         yOffset = groundToYOffset();
@@ -118,16 +115,16 @@ public class SpinFlywheel extends CommandBase {
   }
 
   private double groundToYOffset() {
-    // Checked using actual values, and off by a few degrees, likely due to measurement error
-
     double ground_dist =
         pose.get().getTranslation().getDistance(Constants.FieldConstants.HUB_CENTER)
             - FieldConstants.HUB_RADIUS_METERS;
-    ground_dist *= METERS_TO_INCHES;
     double angleToLimelight =
-        Math.atan((GROUND_TO_TAPE - CAM_HEIGHT) / ground_dist) * 180 / Math.PI;
-    double yOffset = angleToLimelight - LIMELIGHT_ANGLE;
-    return yOffset;
+        Math.atan((FieldConstants.TARGET_HEIGHT_METERS - cameraConsts.camHeight) / ground_dist);
+    // Y-offset after being passed to a Rotation2d decreases as the target gets higher in the image,
+    // but that's not what our interpolation tables use. To retain the old output, the camera pitch
+    // (which is now negative when pointed up) must be added instead of subtracted.
+    double yOffset = angleToLimelight + cameraConsts.camToNormalAngle.getDegrees();
+    return Math.toDegrees(yOffset);
   }
 
   @Override
@@ -139,7 +136,7 @@ public class SpinFlywheel extends CommandBase {
   public void end(boolean interrupted) {
     /*
     if (limelight != null) {
-      limelight.setLed(LedControl.ForceOff);
+      limelight.setLed(VisionLEDMode.kOff);
     }
     */
   }

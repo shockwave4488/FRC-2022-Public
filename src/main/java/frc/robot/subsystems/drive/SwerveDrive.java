@@ -1,7 +1,9 @@
 package frc.robot.subsystems.drive;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -11,6 +13,7 @@ import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.lib.logging.Logger;
 import frc.lib.sensors.NavX;
+import frc.lib.util.app.PoseEstimationUtil;
 import frc.lib.util.app.Util;
 import frc.lib.wpiextensions.ShockwaveSubsystemBase;
 import frc.robot.Constants.FieldConstants;
@@ -136,15 +139,13 @@ public class SwerveDrive extends ShockwaveSubsystemBase {
     // SmartDashboard updates are commeneted out because they are performance heavy and cause loop
     // overruns
     m_frontLeft.updateSmartDashboard();
-    /*
     m_frontRight.updateSmartDashboard();
     m_backLeft.updateSmartDashboard();
     m_backRight.updateSmartDashboard();
-    */
     // SmartDashboard.putNumber("Robot Pitch", m_gyro.getPitch().getDegrees());
     // SmartDashboard.putNumber("CurrentPoseX", fieldPoseX);
     // SmartDashboard.putNumber("CurrentPoseY", fieldPoseY);
-    SmartDashboard.putData(currentFieldPos);
+    // SmartDashboard.putData(currentFieldPos);
     SmartDashboard.putNumber("CurrentAngle", m_gyro.getYaw().getDegrees());
   }
 
@@ -241,9 +242,9 @@ public class SwerveDrive extends ShockwaveSubsystemBase {
   /**
    * This method will calculate an estimated robot position based on a given translational distance
    * and internal gyro knowledge. Only call this method if you know your translational distance is
-   * correct.
+   * correct. (Only applicable to the 2022 FRC game, Rapid React)
    *
-   * @param translationalDistance Translational distance from the target in meters
+   * @param translationalDistance Translational distance from the hub target in meters
    */
   public void updateEstimatedPosition(double translationalDistance) {
     translationalDistance += FieldConstants.HUB_RADIUS_METERS;
@@ -268,6 +269,26 @@ public class SwerveDrive extends ShockwaveSubsystemBase {
     logger.writeToLogFormatted(
         this,
         "Updated pose with vision, now X = " + visionEstimatedX + ", Y = " + visionEstimatedY);
+  }
+
+  /**
+   * Resets gyro and odometry based on a vision measurement yielding a 3D transformation (such as
+   * solvePnP for AprilTags).
+   *
+   * @param targetPose Pose of the vision target on the field (likely a static position).
+   * @param targetToCamera Transform from the target pose to the camera pose, likely retrieved from
+   *     a PhotonTrackedTarget.
+   * @param cameraToRobotCenter Transform from the mounted location of the camera to the center of
+   *     the robot. In this case (not always), the Z-axis is irrelevant because the final pose will
+   *     be projected to two dimensions.
+   */
+  public void resetPoseFromTransform(
+      Pose3d targetPose, Transform3d cameraToTarget, Transform3d cameraToRobotCenter) {
+    Pose2d robotCenterPose =
+        PoseEstimationUtil.getRobotPoseFromTransform(
+            targetPose, cameraToTarget, cameraToRobotCenter);
+    m_gyro.setYawAdjustment(robotCenterPose.getRotation());
+    resetOdometry(robotCenterPose);
   }
 
   @Override
