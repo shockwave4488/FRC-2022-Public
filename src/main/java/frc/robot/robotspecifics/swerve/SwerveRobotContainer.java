@@ -27,6 +27,7 @@ import frc.robot.commands.c2022.drive.VisionAlignToTarget;
 import frc.robot.subsystems.drive.ISwerveModule;
 import frc.robot.subsystems.drive.SwerveDrive;
 import frc.robot.subsystems.drive.SwerveModuleNeos;
+import java.util.ArrayList;
 import org.json.simple.JSONObject;
 
 /**
@@ -42,33 +43,18 @@ public class SwerveRobotContainer extends BaseRobotContainer {
   private final I2DDeadzoneCalculator circularDeadzone;
   private final IDeadzoneCalculator squareDeadzone;
   private final XboxController driverJoystick;
-  private final ISwerveModule m_frontLeft;
-  private final ISwerveModule m_frontRight;
-  private final ISwerveModule m_backLeft;
-  private final ISwerveModule m_backRight;
+  private final ISwerveModule[] SModules;
   private final DistanceEstimationConstants limelightDistEstConstants;
   private final Limelight limelight;
   private AutonomousChooser autonomousChooser;
 
   private SwerveParameters[] getSwerveParameters() {
-    JSONObject swerveParametersJSONFL = prefs.getJSONObject("SwerveParametersFL");
-    SwerveParameters swerveParametersFL = new SwerveParameters(swerveParametersJSONFL);
-    JSONObject swerveParametersJSONFR = prefs.getJSONObject("SwerveParametersFR");
-    SwerveParameters swerveParametersFR = new SwerveParameters(swerveParametersJSONFR);
-    JSONObject swerveParametersJSONBL = prefs.getJSONObject("SwerveParametersBL");
-    SwerveParameters swerveParametersBL = new SwerveParameters(swerveParametersJSONBL);
-    JSONObject swerveParametersJSONBR = prefs.getJSONObject("SwerveParametersBR");
-    SwerveParameters swerveParametersBR = new SwerveParameters(swerveParametersJSONBR);
-
-    return new SwerveParameters[] {
-      swerveParametersFL, swerveParametersFR, swerveParametersBL, swerveParametersBR
-    };
-  }
-
-  private ISwerveModule[] getSwerveModules() {
-    return new ISwerveModule[] {
-      m_frontLeft, m_frontRight, m_backLeft, m_backRight,
-    };
+    JSONObject swerveParametersJSON = prefs.getJSONObject("SwerveParameters");
+    ArrayList<SwerveParameters> swerveParamList = new ArrayList<SwerveParameters>();
+    for (Object moduleParameters : swerveParametersJSON.values()) {
+      swerveParamList.add(new SwerveParameters((JSONObject) moduleParameters));
+    }
+    return swerveParamList.toArray(SwerveParameters[]::new);
   }
 
   private DistanceEstimationConstants getLimelightConstants() {
@@ -91,12 +77,13 @@ public class SwerveRobotContainer extends BaseRobotContainer {
     circularDeadzone = new CircularDeadzone(OIConstants.DEFAULT_CONTROLLER_DEADZONE);
     squareDeadzone = new SquareDeadzoneCalculator(OIConstants.DEFAULT_CONTROLLER_DEADZONE);
     swerveParameters = getSwerveParameters();
-    m_frontLeft = new SwerveModuleNeos(swerveParameters[0], logger, prefs);
-    m_frontRight = new SwerveModuleNeos(swerveParameters[1], logger, prefs);
-    m_backLeft = new SwerveModuleNeos(swerveParameters[2], logger, prefs);
-    m_backRight = new SwerveModuleNeos(swerveParameters[3], logger, prefs);
+    SModules = new ISwerveModule[swerveParameters.length];
 
-    swerve = new SwerveDrive(m_gyro, getSwerveModules(), logger);
+    for (int i = 0; i < SModules.length; i++) {
+      SModules[i] = new SwerveModuleNeos(swerveParameters[i], logger, prefs);
+    }
+
+    swerve = new SwerveDrive(m_gyro, SModules, logger);
     driverJoystick = new XboxController(OIConstants.DRIVER_CONTROLLER_PORT);
     limelightDistEstConstants = getLimelightConstants();
     limelight =

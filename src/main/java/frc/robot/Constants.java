@@ -31,9 +31,9 @@ public final class Constants {
     public static final double SWERVE_DRIVE_MAX_ACCEL = 3.5 / 2;
     public static final double SWERVE_ROTATION_SPEED = 2 * Math.PI;
 
-    public static final double SWERVE_DRIVE_ROTATION_P = 0.042;
-    public static final double SWERVE_DRIVE_ROTATION_I = 0.001;
-    public static final double SWERVE_DRIVE_ROTATION_D = 0.003;
+    public static final double SWERVE_DRIVE_ROTATION_P = 0.018;
+    public static final double SWERVE_DRIVE_ROTATION_I = 0;
+    public static final double SWERVE_DRIVE_ROTATION_D = 0;
   }
 
   public static final class OIConstants {
@@ -52,20 +52,15 @@ public final class Constants {
     public static final double RAMP_RATE = 0.1;
 
     public static final double FENDER_RPM = 2050; // Needs to be adjusted/tested
-    public static final double FENDER_HOOD_INPUT = 30; // 6.6 -> 8
+    public static final double FENDER_HOOD_INPUT = 8; // 6.6 -> 8
     public static final double BACK_OF_TARMAC_RPM = 2225; // Adjusted but untested
     public static final double BACK_OF_TARMAC_HOOD_INPUT = 40; // Adjusted but untested
-    public static final double MIN_HOOD_POSITION = 30; // Based on the CAD
+    public static final double MIN_HOOD_POSITION = 6.6; // Based on the CAD
     public static final double FRONT_LAUNCHPAD_RPM = 2675; // Theoretically correct but untested
     public static final double FRONT_LAUNCHPAD_HOOD_INPUT =
         59.8; // Theoretically correct but untested
     public static final double SIDE_LAUNCHPAD_RPM = 2775; // Theoretically correct but untested
     public static final double SIDE_LAUNCHPAD_HOOD_INPUT = 65; // Theoretically correct but untested
-  }
-
-  public static final class ClimberConstants {
-    public static final int CLIMBER_LOCKED_TICKS = 323000; // Just a guess, should be changed later
-    public static final int CLIMBER_MIN_TICKS_TO_LOCK = 320000;
   }
 
   public static final class FieldConstants {
@@ -90,11 +85,11 @@ public final class Constants {
     public static final double PRACTICE_SHOOTER_RPM_OUTSIDE_TARMAC = 1500;
     public static final double PRACTICE_SHOOTER_RPM_INSIDE_TARMAC = 1500; // 2800 when in comp
 
-    public static final double COMP_SHOOTER_RPM_INSIDE_TARMAC =
-        2275; // 1974 -> 2050 -> 2250 -> 2200
-    public static final double COMP_SHOOTER_HOOD_INPUT_INSIDE_TARMAC = 43; // updated 33 -> 38 -> 43
-    public static final double COMP_SHOOTER_RPM_OUTSIDE_TARMAC = 2360; // 2265 -> 2285 -> 2360
-    public static final double COMP_SHOOTER_HOOD_INPUT_OUTSIDE_TARMAC = 52;
+    public static final double COMP_SHOOTER_RPM_INSIDE_TARMAC = 1974; // 2050 -> 2025 -> :)
+    public static final double COMP_SHOOTER_HOOD_INPUT_INSIDE_TARMAC = 33; // updated
+    public static final double COMP_SHOOTER_RPM_OUTSIDE_TARMAC =
+        2265; // 2375 -> 2300 -> 2275 -> 2265
+    public static final double COMP_SHOOTER_HOOD_INPUT_OUTSIDE_TARMAC = 52; // Adjusted but untested
   }
 
   public static final class LEDControllerConstants {

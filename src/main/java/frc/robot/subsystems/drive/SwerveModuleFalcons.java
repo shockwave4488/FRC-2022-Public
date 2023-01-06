@@ -5,6 +5,7 @@ import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.lib.PreferencesParser;
@@ -38,6 +39,7 @@ public class SwerveModuleFalcons implements ISwerveModule {
   private double desiredModuleSpeed;
   private double desiredModuleAngle;
   private String modulePosition;
+  private final Translation2d moduleLocation;
   private double speedTicksPer100ms;
   private double speedRPM;
   private double desiredAngleDegrees;
@@ -52,10 +54,8 @@ public class SwerveModuleFalcons implements ISwerveModule {
 
   private static final double ENCODER_TICKS_PER_ROTATION = 2048;
   private static final double TURN_STEER_REDUCTION = 0.0978;
-  private static final double DRIVE_LIMIT_CURRENT_THRESHOLD = 100; // 50
-  private static final double DRIVE_LIMITED_CURRENT = 90; // 40
-  private static final double TURN_LIMIT_CURRENT_THRESHOLD = 50;
-  private static final double TURN_LIMITED_CURRENT = 40;
+  private static final double LIMIT_CURRENT_THRESHOLD = 50;
+  private static final double LIMITED_CURRENT = 40;
   private static final double LIMIT_CURRENT_AFTER = 0.1;
 
   /**
@@ -71,12 +71,12 @@ public class SwerveModuleFalcons implements ISwerveModule {
     m_turningMotor.configFactoryDefault();
     m_driveMotor.configSupplyCurrentLimit(
         new SupplyCurrentLimitConfiguration(
-            true, DRIVE_LIMITED_CURRENT, DRIVE_LIMIT_CURRENT_THRESHOLD, LIMIT_CURRENT_AFTER));
+            true, LIMITED_CURRENT, LIMIT_CURRENT_THRESHOLD, LIMIT_CURRENT_AFTER));
     m_turningMotor.setInverted(true);
     m_turningMotor.setNeutralMode(NeutralMode.Brake);
     m_turningMotor.configSupplyCurrentLimit(
         new SupplyCurrentLimitConfiguration(
-            true, TURN_LIMITED_CURRENT, TURN_LIMIT_CURRENT_THRESHOLD, LIMIT_CURRENT_AFTER));
+            true, LIMITED_CURRENT, LIMIT_CURRENT_THRESHOLD, LIMIT_CURRENT_AFTER));
     potOffsetRadians = parameters.potOffset;
     this.kEncoderResolution = parameters.potResolution;
     m_turningMagneticEncoder =
@@ -93,6 +93,7 @@ public class SwerveModuleFalcons implements ISwerveModule {
     m_turningMotor.config_kI(0, prefs.tryGetDouble("SwerveFalconsTurnI", DEFAULT_TURN_I));
     m_turningMotor.config_kD(0, prefs.tryGetDouble("SwerveFalconsTurnD", DEFAULT_TURN_D));
     modulePosition = parameters.modulePosition.toString();
+    moduleLocation = new Translation2d(parameters.moduleX, parameters.moduleY);
     zeroTurnMotors();
 
     /*
@@ -225,6 +226,14 @@ public class SwerveModuleFalcons implements ISwerveModule {
   /** @return The speed of the module's wheel in meters/sec */
   public double getSpeed() {
     return (getSpeedNative() / (60 * gearRatio)) * Math.PI * kWheelDiameter;
+  }
+
+  public String getRobotPosition() {
+    return modulePosition;
+  }
+
+  public Translation2d getLocation() {
+    return moduleLocation;
   }
 
   /**

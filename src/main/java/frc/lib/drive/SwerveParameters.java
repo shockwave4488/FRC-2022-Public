@@ -13,6 +13,8 @@ public class SwerveParameters {
   public double wheelDiameter;
   public double driveGearRatio;
   public ModulePosition modulePosition;
+  public double moduleX;
+  public double moduleY;
 
   public enum ModulePosition {
     FRONT_LEFT,
@@ -33,7 +35,9 @@ public class SwerveParameters {
    * @param wheelDiameter Diameter of the wheel in meters.
    * @param driveGearRatio Gear ratio of the motor to wheel (how many times the motor spins for the
    *     wheel to spin once)
-   * @param modulePosition Position of the module.
+   * @param modulePosition Textual position of the module.
+   * @param moduleX X coordinate of the module.
+   * @param moduleY Y coordinate of the module.
    */
   public SwerveParameters(
       int driveMotorChannel,
@@ -43,7 +47,9 @@ public class SwerveParameters {
       int potResolution,
       double wheelDiameter,
       double driveGearRatio,
-      ModulePosition modulePosition) {
+      ModulePosition modulePosition,
+      double moduleX,
+      double moduleY) {
     this.driveMotorChannel = driveMotorChannel;
     this.turningMotorChannel = turningMotorChannel;
     this.turningEncoderChannel = turningEncoderChannel;
@@ -52,6 +58,8 @@ public class SwerveParameters {
     this.wheelDiameter = wheelDiameter;
     this.driveGearRatio = driveGearRatio;
     this.modulePosition = modulePosition;
+    this.moduleX = moduleX;
+    this.moduleY = moduleY;
   }
 
   public SwerveParameters(JSONObject jsonObject) {
@@ -64,6 +72,8 @@ public class SwerveParameters {
     keyList.add(5, "wheelDiameter");
     keyList.add(6, "driveGearRatio");
     keyList.add(7, "modPosition");
+    keyList.add(8, "modX");
+    keyList.add(9, "modY");
 
     for (int i = 0; i < keyList.size(); i++) {
       if (jsonObject.get(keyList.get(i)) == null) {
@@ -80,5 +90,7 @@ public class SwerveParameters {
     this.wheelDiameter = ((Number) jsonObject.get(keyList.get(5))).doubleValue();
     this.driveGearRatio = ((Number) jsonObject.get(keyList.get(6))).doubleValue();
     this.modulePosition = ModulePosition.valueOf(jsonObject.get(keyList.get(7)).toString());
+    this.moduleX = ((Number) jsonObject.get(keyList.get(8))).doubleValue();
+    this.moduleY = ((Number) jsonObject.get(keyList.get(9))).doubleValue();
   }
 }

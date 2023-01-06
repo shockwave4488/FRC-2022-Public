@@ -1,7 +1,6 @@
 package frc.robot.commands.c2022.climber;
 
 import edu.wpi.first.wpilibj2.command.CommandBase;
-import frc.robot.Constants.ClimberConstants;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.subsystems.c2022.Climber;
 import frc.robot.subsystems.c2022.Shooter;
@@ -16,7 +15,6 @@ public class ClimbButtonBox extends CommandBase {
   private static final int CLIMB_DESTRUCTION_TICKS = 20000;
   private static final int CLIMB_SPEED_ARM_DOWN = 3400; // 3000 -> 3100 -> 3400
   private static final int CLIMB_SPEED_ARM_UP = 5200; // was 2500
-  private boolean armWasUp;
 
   /**
    * Control the climber with two buttons
@@ -37,24 +35,13 @@ public class ClimbButtonBox extends CommandBase {
 
   @Override
   public void initialize() {
-    armWasUp = false;
     climber.setLowerLimit(CLIMB_DESTRUCTION_TICKS);
     desiredTicks = climber.getClimberPosition();
     shooter.setHoodPosition(ShooterConstants.MIN_HOOD_POSITION);
-    if (climber.getClimberPosition() >= ClimberConstants.CLIMBER_MIN_TICKS_TO_LOCK) {
-      armWasUp = true;
-    }
   }
 
   @Override
   public void execute() {
-    if (climber.getClimberPosition() > ClimberConstants.CLIMBER_MIN_TICKS_TO_LOCK
-        && climber.getLeftInductiveSensor()
-        && climber.getRightInductiveSensor()
-        && armWasUp) {
-      desiredTicks = ClimberConstants.CLIMBER_LOCKED_TICKS;
-    }
-
     if (moveDown.getAsBoolean()) {
       desiredTicks -= CLIMB_SPEED_ARM_DOWN;
     } else if (moveUp.getAsBoolean()) {

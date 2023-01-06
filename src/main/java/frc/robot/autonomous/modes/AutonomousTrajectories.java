@@ -24,7 +24,7 @@ public class AutonomousTrajectories {
   String DRIVE_OFF_TARMAC_JSON = "OffTarmac";
   Trajectory trajectory = new Trajectory();
   Trajectory driveOffTarmacTrajectory = new Trajectory();
-  Trajectory oneBallMidTrajectory = new Trajectory();
+  Trajectory twoBallLeftTrajectory = new Trajectory();
   Trajectory meanTwoBallLeftPartOneTrajectory = new Trajectory();
   Trajectory meanTwoBallLeftPartTwoTrajectory = new Trajectory();
   Trajectory meanTwoBallLeftPartThreeTrajectory = new Trajectory();
@@ -90,12 +90,12 @@ public class AutonomousTrajectories {
             new ArrayList<Translation2d>(),
             new Pose2d(6.1, 7.3, new Rotation2d(-3 * Math.PI / 4)),
             config);
-    // normal 1 ball auto path
-    oneBallMidTrajectory =
+    // normal 2 ball auto paths
+    twoBallLeftTrajectory =
         TrajectoryGenerator.generateTrajectory(
-            new Pose2d(6.0, 4.0, new Rotation2d(0)),
-            new ArrayList<Translation2d>(),
-            new Pose2d(4.0, 4.01, new Rotation2d(0)),
+            new Pose2d(6.8, 6.0, new Rotation2d(-Math.PI / 4)),
+            List.of(new Translation2d(5, 6.2)),
+            new Pose2d(6.8, 6.0, new Rotation2d(-Math.PI / 4)),
             reverseConfig);
     // normal three ball auto paths
     threeBallRightPartOneTrajectory =
@@ -147,11 +147,11 @@ public class AutonomousTrajectories {
         TrajectoryGenerator.generateTrajectory(
             new Pose2d(5.12, 2.41, new Rotation2d(0.55)),
             new ArrayList<Translation2d>(),
-            new Pose2d(1.25, 1.9, new Rotation2d(Math.PI / 4)),
+            new Pose2d(1.25, 1.55, new Rotation2d(Math.PI / 4)),
             reverseConfig); // needs to be reversed
     fiveBallRightPartThreeBlueWaypointTrajectory =
         TrajectoryGenerator.generateTrajectory(
-            new Pose2d(1.25, 1.9, new Rotation2d(Math.PI / 4)),
+            new Pose2d(1.25, 1.55, new Rotation2d(Math.PI / 4)),
             new ArrayList<Translation2d>(),
             new Pose2d(5.17, 2.36, new Rotation2d(0.55)),
             config);
@@ -186,9 +186,9 @@ public class AutonomousTrajectories {
     return driveOffTarmacTrajectory;
   }
 
-  public Trajectory getOneBallMid() {
+  public Trajectory getTwoBallLeft() {
     // logStates(twoBallLeftTrajectory);
-    return oneBallMidTrajectory;
+    return twoBallLeftTrajectory;
   }
 
   public Trajectory getMeanTwoBallLeftPartOneTrajectory() {

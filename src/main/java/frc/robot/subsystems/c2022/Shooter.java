@@ -17,12 +17,12 @@ public class Shooter extends ShockwaveSubsystemBase {
 
   private static final double PULLEY_RATIO = 1;
   private static final double ENCODER_TICKS_PER_ROTATION = 2048;
-  private static final int MAX_HOOD_POSITION = 83;
-  private static final double HOOD1OFFSET = 0;
-  private static final double HOOD2OFFSET = 0; // RIGHT (battery side is front)
+  private static final int MAX_HOOD_POSITION = 70;
+  private static final double HOOD1OFFSET = 10;
+  private static final double HOOD2OFFSET = 1; // RIGHT (battery side is front)
   private static final double MAX_SHOOTER_RPM = 4000;
-  private static final double CURRENT_RPM_OFFSET = -15;
-  private static final double CURRENT_HOOD_OFFSET = 20;
+  private static final double CURRENT_RPM_OFFSET = -75;
+  private static final double CURRENT_HOOD_OFFSET = 10;
 
   // private final Tuner tuner;
   private final PreferencesParser prefs;

@@ -179,7 +179,7 @@ public class Climber extends ShockwaveSubsystemBase {
   public void updateSmartDashboard() {
     SmartDashboard.putNumber("Climber Position Ticks", getClimberPosition());
     // SmartDashboard.putString("Climber Neutral Mode", climberNeutralMode.toString());
-    SmartDashboard.putNumber("Climber Desired Ticks", desiredTicks);
+    // SmartDashboard.putNumber("Climber Desired Ticks", desiredTicks);
     SmartDashboard.putBoolean("Climber Left Inductive Sensor", leftInductiveSensor.get());
     SmartDashboard.putBoolean("Climber Right Inductive Sensor", rightInductiveSensor.get());
   }

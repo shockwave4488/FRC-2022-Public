@@ -1,6 +1,7 @@
 package frc.robot.commands.c2022.shooter;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.lib.flowcontrol.EdgeTrigger;
 import frc.lib.sensors.Limelight;
@@ -79,7 +80,7 @@ public class SpinFlywheel extends CommandBase {
     lastSpeed = speed;
 
     speed += rpmOffset;
-    // SmartDashboard.putNumber("SpinFlywheel RPM (offset)", speed);
+    SmartDashboard.putNumber("SpinFlywheel RPM (offset)", speed);
 
     if (interpolateShooter) {
       shooter.setRPM(speed);

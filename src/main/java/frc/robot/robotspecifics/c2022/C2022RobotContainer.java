@@ -6,7 +6,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
@@ -58,6 +57,7 @@ import frc.robot.subsystems.c2022.SmartPCM;
 import frc.robot.subsystems.drive.ISwerveModule;
 import frc.robot.subsystems.drive.SwerveDrive;
 import frc.robot.subsystems.drive.SwerveModuleFalcons;
+import java.util.ArrayList;
 import java.util.function.Supplier;
 import org.json.simple.JSONObject;
 
@@ -75,11 +75,8 @@ public class C2022RobotContainer extends BaseRobotContainer {
   private final I2DDeadzoneCalculator bigCircularDeadzone;
   private final IDeadzoneCalculator squareDeadzone;
   private final XboxController driverJoystick;
+  private final ISwerveModule[] SModules;
   private final ButtonBox buttonBox;
-  private final ISwerveModule m_frontLeft;
-  private final ISwerveModule m_frontRight;
-  private final ISwerveModule m_backLeft;
-  private final ISwerveModule m_backRight;
   private final Limelight shooterLimelight;
   private final DistanceEstimationConstants shooterLimelightDistEstConstants;
   private final Shooter shooter;
@@ -93,23 +90,12 @@ public class C2022RobotContainer extends BaseRobotContainer {
   private AutonomousChooser autonomousChooser;
 
   private SwerveParameters[] getSwerveParameters() {
-    JSONObject swerveParametersJSONFL = prefs.getJSONObject("SwerveParametersFL");
-    SwerveParameters swerveParametersFL = new SwerveParameters(swerveParametersJSONFL);
-    JSONObject swerveParametersJSONFR = prefs.getJSONObject("SwerveParametersFR");
-    SwerveParameters swerveParametersFR = new SwerveParameters(swerveParametersJSONFR);
-    JSONObject swerveParametersJSONBL = prefs.getJSONObject("SwerveParametersBL");
-    SwerveParameters swerveParametersBL = new SwerveParameters(swerveParametersJSONBL);
-    JSONObject swerveParametersJSONBR = prefs.getJSONObject("SwerveParametersBR");
-    SwerveParameters swerveParametersBR = new SwerveParameters(swerveParametersJSONBR);
-    return new SwerveParameters[] {
-      swerveParametersFL, swerveParametersFR, swerveParametersBL, swerveParametersBR
-    };
-  }
-
-  private ISwerveModule[] getSwerveModules() {
-    return new ISwerveModule[] {
-      m_frontLeft, m_frontRight, m_backLeft, m_backRight,
-    };
+    JSONObject swerveParametersJSON = prefs.getJSONObject("SwerveParameters");
+    ArrayList<SwerveParameters> swerveParamList = new ArrayList<SwerveParameters>();
+    for (Object moduleParameters : swerveParametersJSON.values()) {
+      swerveParamList.add(new SwerveParameters((JSONObject) moduleParameters));
+    }
+    return swerveParamList.toArray(SwerveParameters[]::new);
   }
 
   private DistanceEstimationConstants getShooterLimelightConstants() {
@@ -133,10 +119,11 @@ public class C2022RobotContainer extends BaseRobotContainer {
     bigCircularDeadzone = new CircularDeadzone(OIConstants.BIG_CONTROLLER_DEADZONE);
     squareDeadzone = new SquareDeadzoneCalculator(OIConstants.DEFAULT_CONTROLLER_DEADZONE);
     swerveParameters = getSwerveParameters();
-    m_frontLeft = new SwerveModuleFalcons(swerveParameters[0], logger, prefs);
-    m_frontRight = new SwerveModuleFalcons(swerveParameters[1], logger, prefs);
-    m_backLeft = new SwerveModuleFalcons(swerveParameters[2], logger, prefs);
-    m_backRight = new SwerveModuleFalcons(swerveParameters[3], logger, prefs);
+    SModules = new ISwerveModule[swerveParameters.length];
+
+    for (int i = 0; i < SModules.length; i++) {
+      SModules[i] = new SwerveModuleFalcons(swerveParameters[i], logger, prefs);
+    }
 
     shooterLimelightDistEstConstants = getShooterLimelightConstants(); // 21, 103, 14
     /* The middle of the hub vision targets (above) are 103 inches off the ground, the other two values are just estimates.
@@ -182,13 +169,14 @@ public class C2022RobotContainer extends BaseRobotContainer {
             prefs.getInt("IntakeBallSensorID"));
     smartPCM = new SmartPCM(prefs.getInt("Intake_PCM_ID"));
     ledController = new LEDController();
+    swerve = new SwerveDrive(m_gyro, SModules, logger);
 
-    swerve = new SwerveDrive(m_gyro, getSwerveModules(), logger);
     /*
     Set initial pose to have the robot pointing at the HUB so the robot doesn't snap upon
     enabling This will be overridden in real matches because autonomousInit will run in Robot.java.
     */
     swerve.resetOdometry(new Pose2d(0, 4.15, new Rotation2d(0)));
+
     driverJoystick = new XboxController(OIConstants.DRIVER_CONTROLLER_PORT);
     buttonBox = new ButtonBox(OIConstants.BUTTON_BOX_PORT);
 
@@ -272,7 +260,7 @@ public class C2022RobotContainer extends BaseRobotContainer {
             () ->
                 bigCircularDeadzone.isPastDeadzone(
                     driverJoystick.getRightY() * -1, driverJoystick.getRightX() * -1));
-    driverRightJoystick.whileActiveContinuous(getNewHeadingSwerveDriveCommand(false));
+    driverRightJoystick.whileActiveOnce(getNewHeadingSwerveDriveCommand(false));
 
     Trigger dPadUp = new Trigger(() -> driverJoystick.getPOV() == 0);
     Trigger dPadDown = new Trigger(() -> driverJoystick.getPOV() == 180);
@@ -284,7 +272,7 @@ public class C2022RobotContainer extends BaseRobotContainer {
     Trigger bBoxButton1 = new Trigger(() -> buttonBox.button1()); // Vision align
     // Trigger bBoxButton2 = new Trigger(() -> buttonBox.button2());
     Trigger bBoxButton3 = new Trigger(() -> buttonBox.button3()); // Auto Shot
-    Trigger bBoxButton4 = new Trigger(() -> buttonBox.button4());
+    // Trigger bBoxButton4 = new Trigger(() -> buttonBox.button4());
     Trigger bBoxButton5 = new Trigger(() -> buttonBox.button5()); // Fender Shot
     Trigger bBoxButton6 = new Trigger(() -> buttonBox.button6()); // Charge Shooter
     Trigger bBoxButton7 = new Trigger(() -> buttonBox.button7()); // RPM Offset Down 10
@@ -301,7 +289,6 @@ public class C2022RobotContainer extends BaseRobotContainer {
     bBoxButton1.toggleWhenActive(getNewVisionAlignToTargetCommand(false));
     // Toggle so operator can stop if aligned to the wrong target
     bBoxButton3.toggleWhenActive(getNewCalculatedShotCommand(), false);
-    bBoxButton4.whenActive(new InstantCommand(() -> shooterLimelight.takeSnapshot()));
     bBoxButton5.whenActive(
         new LaunchFenderShot(
             shooter,
@@ -321,17 +308,13 @@ public class C2022RobotContainer extends BaseRobotContainer {
     bBoxButton8.whenActive(
         new InstantCommand(() -> shooter.setRPMOffset(shooter.getRPMOffset() + 10)));
     bBoxButton9.whenActive(
-        new ClimberLiftToHeight(climber, bBoxButton13)
+        new ClimberLiftToHeight(climber)
             .andThen(new ClimbButtonBox(climber, shooter, bBoxButton9, bBoxButton13)));
     bBoxButton10.whileActiveOnce(new PurgeBack(intake, indexer, shooter));
     bBoxButton11.whileActiveOnce(new PurgeForward(indexer, shooter));
-    bBoxButton14.whileActiveOnce(new ColorIntake(intake, indexerStates, false));
+    bBoxButton14.whileActiveContinuous(new ColorIntake(intake, indexerStates, true));
     bBoxButton15.whileActiveOnce(new ColorlessIntake(intake));
-    bBoxButton16.whileActiveOnce(new ColorIntake(intake, indexerStates, true));
-
-    SmartDashboard.putData(
-        "Limelight Snapshot",
-        new InstantCommand(() -> shooterLimelight.takeSnapshot()).withName("Take snapshot"));
+    bBoxButton16.whileActiveContinuous(new ColorIntake(intake, indexerStates, true, true));
   }
 
   private Supplier<double[]> getDriverLeftStickInput() {

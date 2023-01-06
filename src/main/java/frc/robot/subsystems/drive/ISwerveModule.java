@@ -1,5 +1,6 @@
 package frc.robot.subsystems.drive;
 
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 
 /** This class creates a template for which all swerve code should follow. */
@@ -27,6 +28,12 @@ public interface ISwerveModule {
 
   /** @return The angle of the module's wheels in degrees */
   public double getAbsoluteAngleDegrees();
+
+  /** Returns the String representation of the module's position on the robot */
+  public String getRobotPosition();
+
+  /** Returns the Translation2d location of the module */
+  public Translation2d getLocation();
 
   /** Updates the Smart Dashboard values */
   public void updateSmartDashboard();

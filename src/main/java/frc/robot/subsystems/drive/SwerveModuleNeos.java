@@ -4,6 +4,7 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.SparkMaxPIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import frc.lib.PreferencesParser;
 import frc.lib.controlsystems.SimPID;
@@ -31,6 +32,7 @@ public class SwerveModuleNeos implements ISwerveModule {
   private double desiredModuleSpeed;
   private double desiredModuleAngle;
   private String modulePosition;
+  private final Translation2d moduleLocation;
 
   private static final double DEFAULT_DRIVE_P = 0.00005;
   private static final double DEFAULT_DRIVE_I = 0;
@@ -67,6 +69,7 @@ public class SwerveModuleNeos implements ISwerveModule {
             prefs.tryGetDouble("SwerveNeosTurnD", DEFAULT_TURN_D));
     m_turningPIDController.setWrapAround(0, 4096);
     modulePosition = parameters.modulePosition.toString();
+    moduleLocation = new Translation2d(parameters.moduleX, parameters.moduleY);
 
     logger.addStringTrackable(
         () ->
@@ -166,6 +169,14 @@ public class SwerveModuleNeos implements ISwerveModule {
   /** @return The speed of the module's wheel in meters/sec */
   public double getSpeed() {
     return (getSpeedNative() / (60 * gearRatio)) * Math.PI * kWheelDiameter;
+  }
+
+  public String getRobotPosition() {
+    return modulePosition;
+  }
+
+  public Translation2d getLocation() {
+    return moduleLocation;
   }
 
   /** Call this method to prevent the module from moving from its current position */

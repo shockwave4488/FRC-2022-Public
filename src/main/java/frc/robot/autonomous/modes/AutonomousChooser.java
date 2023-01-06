@@ -103,11 +103,10 @@ public class AutonomousChooser {
     thetaController.enableContinuousInput(-Math.PI, Math.PI);
 
     autonomousModeChooser.addOption("Off Tarmac Auto", AutonomousMode.DRIVE_OFF_TARMAC);
-    autonomousModeChooser.addOption("One Ball Auto Mid", AutonomousMode.ONE_BALL_MID);
+    autonomousModeChooser.addOption("Two Ball Auto Left", AutonomousMode.TWO_BALL_LEFT);
     autonomousModeChooser.addOption(
-        "Mean Shoot 2, Hangar Ball Left", AutonomousMode.MEAN_SHOOT_TWO_BALL_HANGAR_BALL_LEFT);
-    autonomousModeChooser.addOption(
-        "Mean Shoot 2, Fender Ball Left", AutonomousMode.MEAN_SHOOT_TWO_BALL_FENDER_BALL_LEFT);
+        "Mean Shoot 2, Steal One Ball Left",
+        AutonomousMode.MEAN_SHOOT_TWO_BALL_STEAL_ONE_BALL_LEFT);
     autonomousModeChooser.addOption(
         "Mean Shoot 2, Steal Two Ball Left",
         AutonomousMode.MEAN_SHOOT_TWO_BALL_STEAL_TWO_BALL_LEFT);
@@ -126,9 +125,8 @@ public class AutonomousChooser {
 
   private enum AutonomousMode {
     DRIVE_OFF_TARMAC,
-    ONE_BALL_MID,
-    MEAN_SHOOT_TWO_BALL_HANGAR_BALL_LEFT,
-    MEAN_SHOOT_TWO_BALL_FENDER_BALL_LEFT,
+    TWO_BALL_LEFT,
+    MEAN_SHOOT_TWO_BALL_STEAL_ONE_BALL_LEFT,
     MEAN_SHOOT_TWO_BALL_STEAL_TWO_BALL_LEFT,
     THREE_BALL_RIGHT,
     FIVE_BALL_RIGHT_WAYPOINTS,
@@ -155,24 +153,24 @@ public class AutonomousChooser {
     return command;
   }
 
-  public Command getOneBallMidCommand() {
+  public Command getTwoBallLeftCommand() {
     SequentialCommandGroup command = new SequentialCommandGroup();
 
     // resets the gyro
-    resetRobotPose(command, trajectories.getOneBallMid());
+    resetRobotPose(command, trajectories.getTwoBallLeft());
     // continues along the trajectory while intaking
-    followTrajectory(command, trajectories.getOneBallMid());
+    followTrajectoryAndIntake(command, trajectories.getTwoBallLeft());
     // stops
     stopMoving(command);
     // starts shooting
-    autoShot(command);
+    blindShotFromOutsideTarmac(command, 2100, 40, 5);
     // stops
     stopMoving(command);
 
     return command;
   }
 
-  public Command getMeanShootTwoBallHangarBallLeftCommand() {
+  public Command getMeanShootTwoBallStealOneBallLeftCommand() {
     SequentialCommandGroup command = new SequentialCommandGroup();
 
     // resets the gyro
@@ -190,7 +188,7 @@ public class AutonomousChooser {
         command,
         AutonomousConstants.COMP_SHOOTER_RPM_INSIDE_TARMAC,
         AutonomousConstants.COMP_SHOOTER_HOOD_INPUT_INSIDE_TARMAC,
-        2);
+        1);
     // follows the second trajectory while intaking
     followTrajectoryAndIntakeForced(
         command, trajectories.getMeanTwoBallLeftPartThreeTrajectory(), IntakeMode.COLORLESS);
@@ -201,42 +199,6 @@ public class AutonomousChooser {
     // stops
     stopMoving(command);
     // purges towards the hangar
-    purgeThroughIntake(command, 5);
-    // stops
-    stopMoving(command);
-
-    return command;
-  }
-
-  public Command getMeanShootTwoBallFenderBallLeftCommand() {
-    SequentialCommandGroup command = new SequentialCommandGroup();
-
-    // resets the gyro
-    resetRobotPose(command, trajectories.getMeanTwoBallLeftPartOneTrajectory());
-    // continues along the trajectory while intaking
-    followTrajectoryAndIntake(command, trajectories.getMeanTwoBallLeftPartOneTrajectory());
-    // stops
-    stopMoving(command);
-    // follows second trajectory
-    followTrajectoryAndIntake(command, trajectories.getMeanTwoBallLeftPartTwoTrajectory());
-    // stops
-    stopMoving(command);
-    // starts shooting
-    blindShotFromInsideTarmac(
-        command,
-        AutonomousConstants.COMP_SHOOTER_RPM_INSIDE_TARMAC,
-        AutonomousConstants.COMP_SHOOTER_HOOD_INPUT_INSIDE_TARMAC,
-        2);
-    // follows the second trajectory while intaking
-    followTrajectoryAndIntakeForced(
-        command, trajectories.getMeanTwoBallLeftPartThreeTrajectory(), IntakeMode.COLORLESS);
-    // stops
-    stopMoving(command);
-    // rotates for the intake to face our fender
-    rotateToAngle(command, 115);
-    // stops
-    stopMoving(command);
-    // purges towards the fender
     purgeThroughIntake(command, 5);
     // stops
     stopMoving(command);
@@ -354,8 +316,7 @@ public class AutonomousChooser {
         command,
         AutonomousConstants.COMP_SHOOTER_RPM_OUTSIDE_TARMAC,
         AutonomousConstants.COMP_SHOOTER_HOOD_INPUT_OUTSIDE_TARMAC,
-        trajectories.getFiveBallRightPartThreeWaypoint(logger, allianceColor),
-        colorIntakeToggle.getSelected());
+        trajectories.getFiveBallRightPartThreeWaypoint(logger, allianceColor));
     stopMoving(command);
     // shoots one last time
     autoShot(command);
@@ -390,12 +351,10 @@ public class AutonomousChooser {
     switch (autonomousModeChooser.getSelected()) {
       case DRIVE_OFF_TARMAC:
         return getOffTarmacCommand();
-      case ONE_BALL_MID:
-        return getOneBallMidCommand();
-      case MEAN_SHOOT_TWO_BALL_HANGAR_BALL_LEFT:
-        return getMeanShootTwoBallHangarBallLeftCommand();
-      case MEAN_SHOOT_TWO_BALL_FENDER_BALL_LEFT:
-        return getMeanShootTwoBallFenderBallLeftCommand();
+      case TWO_BALL_LEFT:
+        return getTwoBallLeftCommand();
+      case MEAN_SHOOT_TWO_BALL_STEAL_ONE_BALL_LEFT:
+        return getMeanShootTwoBallStealOneBallLeftCommand();
       case MEAN_SHOOT_TWO_BALL_STEAL_TWO_BALL_LEFT:
         return getMeanShootTwoBallStealTwoBallLeftCommand();
       case THREE_BALL_RIGHT:
@@ -415,7 +374,7 @@ public class AutonomousChooser {
         return new RepeatCommand(new ColorIntake(intake, indexerStates, false))
             .withName("ColorIntake");
       case COLOR_HARD:
-        return new RepeatCommand(new ColorIntake(intake, indexerStates, true))
+        return new RepeatCommand(new ColorIntake(intake, indexerStates, false, true))
             .withName("HardColorIntake");
       case COLORLESS:
         return new ColorlessIntake(intake).withName("ColorlessIntake");
@@ -531,11 +490,7 @@ public class AutonomousChooser {
   }
 
   private void followTrajectoryAndPreSpinShooter(
-      SequentialCommandGroup command,
-      double shooterRPM,
-      double hoodInput,
-      Trajectory trajectory,
-      IntakeMode intakeMode) {
+      SequentialCommandGroup command, double shooterRPM, double hoodInput, Trajectory trajectory) {
     ParallelDeadlineGroup driveAndPreSpinShooterCommand =
         new ParallelDeadlineGroup(
             new SwerveControllerCommand(
@@ -555,9 +510,7 @@ public class AutonomousChooser {
                             .getDegrees()),
                 swerve::setModuleStates,
                 swerve));
-    if (intake != null) {
-      driveAndPreSpinShooterCommand.addCommands(getIntakeCommand(intakeMode));
-    }
+    driveAndPreSpinShooterCommand.addCommands(new ColorIntake(intake, indexerStates, false));
     preSpinShooter(driveAndPreSpinShooterCommand, shooterRPM, hoodInput);
     driveAndPreSpinShooterCommand.addCommands(new DefaultIndexerLoad(indexer));
     command.addCommands(driveAndPreSpinShooterCommand);

@@ -19,13 +19,11 @@ public class Limelight extends ShockwaveSubsystemBase {
   private final Logger logger;
 
   private static final int DEFAULT_PIPE = 0;
-  private int snapshotCycles = 1;
 
   private NetworkTable table;
   private NetworkTableEntry xEntry, yEntry, areaEntry;
   private NetworkTableEntry hasTargetEntry, currentPipeEntry;
   private NetworkTableEntry ledControlEntry, pipeControlEntry;
-  private NetworkTableEntry snapshotEntry;
 
   private Optional<DigitalOutput> extraLedDio;
 
@@ -96,7 +94,6 @@ public class Limelight extends ShockwaveSubsystemBase {
     currentPipeEntry = table.getEntry("getpipe");
     ledControlEntry = table.getEntry("ledMode");
     pipeControlEntry = table.getEntry("pipeline");
-    snapshotEntry = table.getEntry("snapshot");
   }
 
   public boolean hasTarget() {
@@ -153,24 +150,9 @@ public class Limelight extends ShockwaveSubsystemBase {
     pipeControlEntry.setNumber(pipeline);
   }
 
-  public void takeSnapshot() {
-    setSnapshotState(0);
-    setSnapshotState(1);
-    snapshotCycles = 10;
-  }
-
-  private void setSnapshotState(int state) {
-    snapshotEntry.setNumber(state);
-  }
-
   @Override
   public void periodic() {
     updateTables();
-    snapshotCycles--;
-    if (snapshotCycles == 0) {
-      setSnapshotState(0);
-    }
-    snapshotCycles = Math.max(snapshotCycles, -1);
   }
 
   /**

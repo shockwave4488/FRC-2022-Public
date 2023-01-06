@@ -2,27 +2,19 @@ package frc.robot.commands.c2022.climber;
 
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.robot.subsystems.c2022.Climber;
-import java.util.function.BooleanSupplier;
 
 public class ClimberLiftToHeight extends CommandBase {
   private final Climber climber;
   private final int desiredTicks;
   private final int minDoneTicks;
   private final int doneTickRange;
-  // abort button exists so we can cancel this action if the arm up button is accidentally hit
-  private final BooleanSupplier abort;
 
   public ClimberLiftToHeight(
-      Climber climber,
-      int desiredTicks,
-      int minDoneTicks,
-      int doneTickRange,
-      BooleanSupplier abort) {
+      Climber climber, int desiredTicks, int minDoneTicks, int doneTickRange) {
     this.climber = climber;
     this.desiredTicks = desiredTicks;
     this.minDoneTicks = minDoneTicks;
     this.doneTickRange = doneTickRange;
-    this.abort = abort;
   }
 
   /**
@@ -33,12 +25,12 @@ public class ClimberLiftToHeight extends CommandBase {
    * @param climber The climber subsystem object
    * @param desiredTicks The desired height of the climber in motor ticks
    */
-  public ClimberLiftToHeight(Climber climber, int desiredTicks, BooleanSupplier abort) {
-    this(climber, desiredTicks, 2, 3000, abort);
+  public ClimberLiftToHeight(Climber climber, int desiredTicks) {
+    this(climber, desiredTicks, 0, 999999);
   }
 
-  public ClimberLiftToHeight(Climber climber, BooleanSupplier abort) {
-    this(climber, climber.getUpperLimit(), abort);
+  public ClimberLiftToHeight(Climber climber) {
+    this(climber, climber.getUpperLimit());
   }
 
   @Override
@@ -48,6 +40,6 @@ public class ClimberLiftToHeight extends CommandBase {
 
   @Override
   public boolean isFinished() {
-    return climber.isStable() || abort.getAsBoolean();
+    return climber.isStable();
   }
 }

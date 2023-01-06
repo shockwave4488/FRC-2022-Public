@@ -21,9 +21,8 @@ public class DriveAndClimb extends SequentialCommandGroup {
       int desiredFirstHeight,
       DoubleSupplier power,
       BooleanSupplier doneDriving,
-      BooleanSupplier abort,
       DefaultSwerveDrive defaultSwerveDrive) {
-    climberLiftToHeight = new ClimberLiftToHeight(climber, desiredFirstHeight, abort);
+    climberLiftToHeight = new ClimberLiftToHeight(climber, desiredFirstHeight);
     climbMotionTest = new ClimbMotionTest(climber, power);
 
     addCommands(
