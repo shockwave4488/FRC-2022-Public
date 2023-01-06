@@ -3,8 +3,8 @@ package frc.robot.commands.c2022.drive;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandBase;
-import frc.lib.sensors.Limelight;
 import frc.lib.sensors.NavX;
+import frc.lib.sensors.vision.Limelight;
 import frc.robot.subsystems.drive.SwerveDrive;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
@@ -143,7 +143,7 @@ public class SwerveDriveWithHeading extends CommandBase {
   @Override
   public boolean isFinished() {
     if (targetTakeover) {
-      return limelight.hasTarget();
+      return limelight.hasTargets();
     }
     return false;
   }

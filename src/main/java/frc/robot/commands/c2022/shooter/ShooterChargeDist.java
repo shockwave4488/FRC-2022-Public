@@ -1,15 +1,18 @@
 package frc.robot.commands.c2022.shooter;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandBase;
-import frc.lib.sensors.Limelight;
-import frc.lib.sensors.Limelight.DistanceEstimationConstants;
 import frc.lib.sensors.NavX;
+import frc.lib.sensors.vision.Limelight;
+import frc.lib.sensors.vision.VisionCamera.CameraPositionConstants;
 import frc.robot.Constants;
+import frc.robot.Constants.FieldConstants;
 import frc.robot.subsystems.c2022.Shooter;
 import java.util.function.Supplier;
 
+/** Unused shooter charge class, instead use SpinFlywheel with false for {@code end} */
 public class ShooterChargeDist extends CommandBase {
   private final Shooter shooter;
   // private final NavX gyro;
@@ -20,7 +23,6 @@ public class ShooterChargeDist extends CommandBase {
   private final double bRPMInterpConstant;
   // private final double aRPMToHoodInterpConstant;
   // private final double bRPMToHoodInterpConstant;
-  private static final double INCHES_TO_METERS = 0.0254;
   private Pose2d currentPose;
   private double translationDistToShooter; // meters
   private double threeDDistToShooter; // meters
@@ -33,7 +35,6 @@ public class ShooterChargeDist extends CommandBase {
       Shooter shooter,
       NavX gyro,
       Limelight limelight,
-      DistanceEstimationConstants limelightConstants,
       Supplier<Pose2d> currentPoseSupplier,
       double aRPMInterpConstant,
       double bRPMInterpConstant,
@@ -43,9 +44,12 @@ public class ShooterChargeDist extends CommandBase {
     // this.gyro = gyro;
     this.limelight = limelight;
     this.currentPoseSupplier = currentPoseSupplier;
+    CameraPositionConstants limelightConstants = limelight.getCameraPositionConsts();
     powOfCamHUBHeightDiff =
         Math.pow(
-            (limelightConstants.targetHeight - limelightConstants.camHeight) * INCHES_TO_METERS, 2);
+            Units.inchesToMeters(
+                FieldConstants.TARGET_HEIGHT_METERS - limelightConstants.camHeight),
+            2);
     this.aRPMInterpConstant = aRPMInterpConstant;
     this.bRPMInterpConstant = bRPMInterpConstant;
     // this.aRPMToHoodInterpConstant = aRPMToHoodInterpConstant;
@@ -54,8 +58,8 @@ public class ShooterChargeDist extends CommandBase {
 
   @Override
   public void execute() {
-    if (limelight.hasTarget()) {
-      yOffset = limelight.getY();
+    if (limelight.hasTargets()) {
+      yOffset = -limelight.getBestTarget().get().getY().getDegrees();
       desiredRPM = shooter.getRPMFromYOffset(yOffset);
       desiredHoodPosition = shooter.getHoodLevelFromRPM(desiredRPM);
     } else {

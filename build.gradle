@@ -7,6 +7,10 @@ plugins {
     id 'com.github.spotbugs' version '5.0.4'
 }
 
+repositories {
+    mavenCentral()
+}
+
 sourceCompatibility = JavaVersion.VERSION_11
 targetCompatibility = JavaVersion.VERSION_11
 
@@ -73,6 +77,7 @@ dependencies {
 
     compileOnly "com.github.spotbugs:spotbugs-annotations:${spotbugs.toolVersion.get()}"
 
+    implementation group: 'edu.wpi.first.apriltags', name: 'apriltags-java', version: '2023.1.1-beta-4'
     implementation group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1.1'
     implementation group: 'gov.nist.math', name: 'jama', version: '1.0.3'
     testImplementation group: 'org.powermock', name: 'powermock-api-mockito2', version: '2.0.9'
@@ -102,6 +107,10 @@ wpi.java.configureTestTasks(test)
 spotbugsMain {
     ignoreFailures = false
     excludeFilter = file('spotbugsExclusions.xml')
+}
+
+googleJavaFormat {
+    toolVersion = '1.15.0'
 }
 
 tasks.withType(com.github.spotbugs.snom.SpotBugsTask) {

@@ -189,22 +189,30 @@ public class SwerveModuleFalcons implements ISwerveModule {
     stopped = false;
   }
 
-  /** @return The analog input value of the encoder for the rotation motor */
+  /**
+   * @return The analog input value of the encoder for the rotation motor
+   */
   public double getAngleTicks() {
     return (m_turningMotor.getSelectedSensorPosition() * TURN_STEER_REDUCTION);
   }
 
-  /** @return The angle of the module's wheel in radians */
+  /**
+   * @return The angle of the module's wheel in radians
+   */
   public double getAngleRadians() {
     return getAngleTicks() * 2 * Math.PI / ENCODER_TICKS_PER_ROTATION;
   }
 
-  /** @return The angle of the module within the range [0, 2pi) */
+  /**
+   * @return The angle of the module within the range [0, 2pi)
+   */
   public double getAbsoluteAngleRadians() {
     return getAngleRadians() % (2.0 * Math.PI);
   }
 
-  /** @return The angle of the module's wheels in degrees */
+  /**
+   * @return The angle of the module's wheels in degrees
+   */
   public double getAbsoluteAngleDegrees() {
     return (getAngleTicks() * 360 / ENCODER_TICKS_PER_ROTATION) % (360);
   }
@@ -213,7 +221,9 @@ public class SwerveModuleFalcons implements ISwerveModule {
     return desiredModuleAngle;
   }
 
-  /** @return The rpm of the drive motor */
+  /**
+   * @return The rpm of the drive motor
+   */
   public double getSpeedNative() {
     return m_driveMotor.getSelectedSensorVelocity() * (60 * 10) / ENCODER_TICKS_PER_ROTATION;
   }
@@ -222,7 +232,9 @@ public class SwerveModuleFalcons implements ISwerveModule {
     return desiredModuleSpeed;
   }
 
-  /** @return The speed of the module's wheel in meters/sec */
+  /**
+   * @return The speed of the module's wheel in meters/sec
+   */
   public double getSpeed() {
     return (getSpeedNative() / (60 * gearRatio)) * Math.PI * kWheelDiameter;
   }

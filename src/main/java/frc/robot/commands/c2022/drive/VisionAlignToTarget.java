@@ -1,9 +1,10 @@
 package frc.robot.commands.c2022.drive;
 
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.CommandBase;
-import frc.lib.sensors.Limelight;
 import frc.lib.sensors.NavX;
+import frc.lib.sensors.vision.Limelight;
 import frc.robot.Constants.DriveTrainConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.subsystems.drive.SwerveDrive;
@@ -32,12 +33,12 @@ public class VisionAlignToTarget extends CommandBase {
   /* limelightXAngle & limelightYAngle are set to illogical values to guarantee that
   hasSignificantChange returns true and that these values are updated upon the first cycle that
   the limelight sees the target */
-  private double limelightXAngle = 999;
-  private double limelightYAngle = 999;
+  private Rotation2d limelightXAngle = new Rotation2d(180);
+  private Rotation2d limelightYAngle = new Rotation2d(180);
   private static final double MIN_AT_SETPOINT_CYCLES = 10;
   private static final double MIN_RESET_POS_CYCLES = 4;
   /* prevents setpoint from being updated if the change in limelight.getX() is less than this value. */
-  private static final double ANTI_OSCILLATION_THRESHOLD = 1;
+  private static final double ANTI_OSCILLATION_THRESHOLD = 1; // degrees
   private static final double DEFAULT_PID_P = DriveTrainConstants.SWERVE_DRIVE_ROTATION_P;
   private static final double DEFAULT_PID_I = DriveTrainConstants.SWERVE_DRIVE_ROTATION_I;
   private static final double DEFAULT_PID_D = DriveTrainConstants.SWERVE_DRIVE_ROTATION_D;
@@ -104,29 +105,31 @@ public class VisionAlignToTarget extends CommandBase {
     pidController.setD(SmartDashboard.getNumber("LLPID_D", DEFAULT_PID_D));
     */
 
-    if (limelight.hasTarget()) {
-      if (hasSignificantChange(limelight.getX(), limelightXAngle)) {
-        limelightXAngle = limelight.getX();
-        // Returns a negative value when the target is on the left side of the screen
+    if (limelight.hasTargets()) {
+      if (hasSignificantChange(limelight.getBestTarget().get().getX(), limelightXAngle)) {
+        limelightXAngle = limelight.getBestTarget().get().getX();
+        // Returns a positive value when the target is on the left side of the screen
       }
-      if (hasSignificantChange(limelight.getY(), limelightYAngle)) {
-        limelightYAngle = limelight.getY();
+      if (hasSignificantChange(limelight.getBestTarget().get().getY(), limelightYAngle)) {
+        limelightYAngle = limelight.getBestTarget().get().getY();
         double translationalDist =
-            limelight.getEstimatedDistance() + FieldConstants.HUB_RADIUS_METERS;
+            limelight.getEstimatedDistance(
+                    limelight.getBestTarget().get(), FieldConstants.TARGET_HEIGHT_METERS)
+                + FieldConstants.HUB_RADIUS_METERS;
         currentTolerance =
             Math.abs(Math.atan(FieldConstants.HUB_SAFE_SHOT_RADIUS_METERS / translationalDist));
         currentTolerance *= 180 / Math.PI; // convert to degrees
       }
-      double currentAngle = gyro.getYaw().getDegrees();
+      Rotation2d currentAngle = gyro.getYaw();
       // SmartDashboard.putNumber("LL X Difference", limelightXAngle);
-      double targetAngle = currentAngle - limelightXAngle;
+      double targetAngle = currentAngle.plus(limelightXAngle).getDegrees();
       if (targetAngle > 180) {
         targetAngle -= 360;
       } else if (targetAngle < -180) {
         targetAngle += 360;
       }
       // SmartDashboard.putNumber("LL Target Angle", targetAngle);
-      rotPower = pidController.calculate(currentAngle, targetAngle);
+      rotPower = pidController.calculate(currentAngle.getDegrees(), targetAngle);
       rotPower *= rotationMultiplier;
       rotPower = Math.min(Math.max(-rotationMultiplier, rotPower), rotationMultiplier);
     }
@@ -135,7 +138,7 @@ public class VisionAlignToTarget extends CommandBase {
     // based on our pidController
     pidController.setTolerance(currentTolerance);
 
-    if (limelight.hasTarget()) {
+    if (limelight.hasTargets()) {
       currentHasTargetCycles++;
     }
 
@@ -154,11 +157,13 @@ public class VisionAlignToTarget extends CommandBase {
     // Condition under which it should be safe to reset the position of the swerve drive based on
     // vision and gyro.
     if ((readyToShoot())
-        && limelight.hasTarget()
+        && limelight.hasTargets()
         && driveXSpeed == 0
         && driveYSpeed == 0
         && (currentResetCycles > MIN_RESET_POS_CYCLES)) {
-      swerve.updateEstimatedPosition(limelight.getEstimatedDistance());
+      swerve.updateEstimatedPosition(
+          limelight.getEstimatedDistance(
+              limelight.getBestTarget().get(), FieldConstants.TARGET_HEIGHT_METERS));
       currentResetCycles = 0;
       /* set to 0 to make it so only 4 cycles are needed before the pose estimation runs
       again. This helps achieve a balance (although arbitrary) between keeping the
@@ -168,8 +173,10 @@ public class VisionAlignToTarget extends CommandBase {
     swerve.drive(driveXSpeed, driveYSpeed, rotPower, true);
   }
 
-  private boolean hasSignificantChange(double currentLimelightValue, double storedLimelightValue) {
-    return Math.abs((currentLimelightValue - storedLimelightValue)) > ANTI_OSCILLATION_THRESHOLD;
+  private boolean hasSignificantChange(
+      Rotation2d currentLimelightValue, Rotation2d storedLimelightValue) {
+    return Math.abs((currentLimelightValue.getDegrees() - storedLimelightValue.getDegrees()))
+        > ANTI_OSCILLATION_THRESHOLD;
   }
 
   private boolean readyToShoot() {

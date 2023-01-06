@@ -7,6 +7,8 @@ import frc.lib.PreferencesParser;
 import frc.lib.logging.Logger;
 import frc.robot.robotspecifics.bareroborio.BareRoboRIORobotContainer;
 import frc.robot.robotspecifics.c2022.C2022RobotContainer;
+import frc.robot.robotspecifics.candy.CandyRobotContainer;
+import frc.robot.robotspecifics.practice.PracticeRobotContainer;
 import frc.robot.robotspecifics.spider.SpiderBotContainer;
 import frc.robot.robotspecifics.swerve.SwerveRobotContainer;
 
@@ -37,7 +39,9 @@ public class RobotSelector {
     if (robotName.equals("C2022")) {
       container = new C2022RobotContainer(prefs, logger);
     } else if (robotName.equals("P2022")) {
-      container = new C2022RobotContainer(prefs, logger);
+      container = new PracticeRobotContainer(prefs, logger);
+    } else if (robotName.equals("Candy")) {
+      container = new CandyRobotContainer(prefs, logger);
     } else if (robotName.equals("Spider")) {
       container = new SpiderBotContainer(prefs, logger);
     } else if (robotName.equals("Swerve")) {
