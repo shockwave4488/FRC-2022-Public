@@ -31,7 +31,7 @@ public class CTREMagneticEncoder {
       int pwmPort, double pulsesPerRevolution, double offset, boolean inverted) {
     this.offset = offset;
     pwmCounter = new Counter(pwmPort);
-    pwmCounter.setSemiPeriodMode(true); // only count rising edges
+    pwmCounter.setSemiPeriodMode(true);
 
     // wait for the pwm signal to be counted
     try {
@@ -57,13 +57,7 @@ public class CTREMagneticEncoder {
    * @return Adjusted angle in radians
    */
   public double getAngleOffset() {
-    double angle = (((pwmCounter.getPeriod() - 1e-6) / 4095e-6) * 2 * Math.PI) - offset;
-
-    if (angle < 0) {
-      angle += 2 * Math.PI;
-    }
-
-    return angle;
+    return (getAngle() - offset + 2 * Math.PI) % (2 * Math.PI);
   }
 
   /**

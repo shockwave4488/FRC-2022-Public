@@ -1,11 +1,11 @@
 package frc.robot.commands.supplementary;
 
 import edu.wpi.first.wpilibj2.command.CommandBase;
-import edu.wpi.first.wpilibj2.command.ProxyScheduleCommand;
+import edu.wpi.first.wpilibj2.command.ProxyCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 
 /** Names anonymous commands for more informative RunningCommands logs. */
-public class LogCommand extends ProxyScheduleCommand {
+public class LogCommand extends ProxyCommand {
   /**
    * Makes the given command(s) visible to the CommandScheduler with an identity. WARNING: Could
    * interrupt Command Group or running sub-commands with same requirements.

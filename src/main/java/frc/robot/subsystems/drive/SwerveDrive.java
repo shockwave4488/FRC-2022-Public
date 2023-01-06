@@ -1,19 +1,17 @@
 package frc.robot.subsystems.drive;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.lib.logging.Logger;
 import frc.lib.sensors.NavX;
-import frc.lib.util.app.Util;
 import frc.lib.wpiextensions.ShockwaveSubsystemBase;
-import frc.robot.Constants.FieldConstants;
 
 /** Represents a swerve drive style drivetrain. */
 public class SwerveDrive extends ShockwaveSubsystemBase {
@@ -22,8 +20,6 @@ public class SwerveDrive extends ShockwaveSubsystemBase {
 
   private static final double kTrackLength = 0.5715; // front to back
   private static final double kTrackWidth = 0.4826; // left to right
-
-  private static final double kMinimumInputValue = 0.01;
 
   private final Translation2d m_frontLeftLocation =
       new Translation2d(kTrackLength / 2, kTrackWidth / 2);
@@ -56,21 +52,20 @@ public class SwerveDrive extends ShockwaveSubsystemBase {
    * The drive class for swerve robots
    *
    * @param gyro A NavX that's used to get the angle of the robot
-   * @param parameters Parameters that are passed to SwerveModules for their setup
+   * @param modules Array of swerve modules in the order: front left, front right, back left, back
+   *     right
    */
   public SwerveDrive(NavX gyro, ISwerveModule[] modules, Logger logger) {
     m_gyro = gyro;
     this.logger = logger;
-    m_kinematics =
-        new SwerveDriveKinematics(
-            m_frontLeftLocation, m_frontRightLocation, m_backLeftLocation, m_backRightLocation);
-    m_odometry =
-        new SwerveDriveOdometry(m_kinematics, new Rotation2d(m_gyro.getYaw().getRadians()));
-
     m_frontLeft = modules[0];
     m_frontRight = modules[1];
     m_backLeft = modules[2];
     m_backRight = modules[3];
+    m_kinematics =
+        new SwerveDriveKinematics(
+            m_frontLeftLocation, m_frontRightLocation, m_backLeftLocation, m_backRightLocation);
+    m_odometry = new SwerveDriveOdometry(m_kinematics, m_gyro.getYaw(), getModulePositions());
   }
 
   /**
@@ -83,36 +78,17 @@ public class SwerveDrive extends ShockwaveSubsystemBase {
    */
   @SuppressWarnings("ParameterName")
   public void drive(double xSpeed, double ySpeed, double rot, boolean fieldRelative) {
-    if (Util.epsilonEquals(xSpeed, 0, kMinimumInputValue)
-        && Util.epsilonEquals(ySpeed, 0, kMinimumInputValue)
-        && Util.epsilonEquals(rot, 0, kMinimumInputValue)) {
-      m_frontLeft.halt();
-      m_frontRight.halt();
-      m_backLeft.halt();
-      m_backRight.halt();
-    }
-
     var swerveModuleStates =
         m_kinematics.toSwerveModuleStates(
             fieldRelative
-                ? ChassisSpeeds.fromFieldRelativeSpeeds(
-                    xSpeed, ySpeed, rot, new Rotation2d(m_gyro.getYaw().getRadians()))
+                ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, m_gyro.getYaw())
                 : new ChassisSpeeds(xSpeed, ySpeed, rot));
-    SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, kMaxSpeed);
-    m_frontLeft.setDesiredState(swerveModuleStates[0]);
-    m_frontRight.setDesiredState(swerveModuleStates[1]);
-    m_backLeft.setDesiredState(swerveModuleStates[2]);
-    m_backRight.setDesiredState(swerveModuleStates[3]);
+    setModuleStates(swerveModuleStates);
   }
 
   /** Updates the field relative position of the robot. */
   public void updateOdometry() {
-    m_odometry.update(
-        new Rotation2d(m_gyro.getYaw().getRadians()),
-        m_frontLeft.getState(),
-        m_frontRight.getState(),
-        m_backLeft.getState(),
-        m_backRight.getState());
+    m_odometry.update(m_gyro.getYaw(), getModulePositions());
   }
 
   @Override
@@ -136,15 +112,13 @@ public class SwerveDrive extends ShockwaveSubsystemBase {
     // SmartDashboard updates are commeneted out because they are performance heavy and cause loop
     // overruns
     m_frontLeft.updateSmartDashboard();
-    /*
     m_frontRight.updateSmartDashboard();
     m_backLeft.updateSmartDashboard();
     m_backRight.updateSmartDashboard();
-    */
     // SmartDashboard.putNumber("Robot Pitch", m_gyro.getPitch().getDegrees());
     // SmartDashboard.putNumber("CurrentPoseX", fieldPoseX);
     // SmartDashboard.putNumber("CurrentPoseY", fieldPoseY);
-    SmartDashboard.putData(currentFieldPos);
+    // SmartDashboard.putData(currentFieldPos);
     SmartDashboard.putNumber("CurrentAngle", m_gyro.getYaw().getDegrees());
   }
 
@@ -224,6 +198,15 @@ public class SwerveDrive extends ShockwaveSubsystemBase {
     return m_odometry.getPoseMeters();
   }
 
+  private SwerveModulePosition[] getModulePositions() {
+    return new SwerveModulePosition[] {
+      m_frontLeft.getPosition(),
+      m_frontRight.getPosition(),
+      m_backLeft.getPosition(),
+      m_backRight.getPosition()
+    };
+  }
+
   /**
    * Used to directly set the state of (and move) the swerve modules
    *
@@ -238,36 +221,10 @@ public class SwerveDrive extends ShockwaveSubsystemBase {
     m_backRight.setDesiredState(desiredStates[3]);
   }
 
-  /**
-   * This method will calculate an estimated robot position based on a given translational distance
-   * and internal gyro knowledge. Only call this method if you know your translational distance is
-   * correct.
-   *
-   * @param translationalDistance Translational distance from the target in meters
-   */
-  public void updateEstimatedPosition(double translationalDistance) {
-    translationalDistance += FieldConstants.HUB_RADIUS_METERS;
-    SmartDashboard.putNumber("PR Translational Distance (HUB Center)", translationalDistance);
-
-    // Yes the gyro angle may be better to use but theoretically it and the pose angle should be
-    // identical, and it wouldn't be ideal to make a new rotation 2d every cycle to make the new
-    // pose. And from testing, the gyro and odometry angles are identical, as they should be.
-    Rotation2d currentRotation = currentPose.getRotation();
-    double currentAngle = currentRotation.getRadians();
-
-    // The robot's quadrant on the field does not matter when doing the following calculations.
-    double relativeX = -Math.cos(currentAngle) * translationalDistance;
-    double relativeY = -Math.sin(currentAngle) * translationalDistance;
-    visionEstimatedX = FieldConstants.HUB_CENTER.getX() + relativeX;
-    visionEstimatedY = FieldConstants.HUB_CENTER.getY() + relativeY;
-    // SmartDashboard.putNumber("PR Estimated X", visionEstimatedX);
-    // SmartDashboard.putNumber("PR Estimated Y", visionEstimatedY);
-
-    Pose2d estimatedPose = new Pose2d(visionEstimatedX, visionEstimatedY, currentRotation);
-    resetOdometry(estimatedPose);
-    logger.writeToLogFormatted(
-        this,
-        "Updated pose with vision, now X = " + visionEstimatedX + ", Y = " + visionEstimatedY);
+  public void consumeVisionEstimate(Pose2d visionMeasurement) {
+    // Might use PoseEstimator later instead of just resetting odometry
+    m_gyro.setYawAdjustment(visionMeasurement.getRotation());
+    resetOdometry(visionMeasurement);
   }
 
   @Override
@@ -285,6 +242,6 @@ public class SwerveDrive extends ShockwaveSubsystemBase {
    * @param pose The position on the field you want the robot to think it's at
    */
   public void resetOdometry(Pose2d pose) {
-    m_odometry.resetPosition(pose, new Rotation2d(m_gyro.getYaw().getRadians()));
+    m_odometry.resetPosition(m_gyro.getYaw(), getModulePositions(), pose);
   }
 }

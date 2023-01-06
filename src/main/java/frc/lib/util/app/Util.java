@@ -1,5 +1,6 @@
 package frc.lib.util.app;
 
+import edu.wpi.first.math.MathUtil;
 import java.util.List;
 
 /** Contains basic functions that are used often. */
@@ -11,11 +12,7 @@ public final class Util {
 
   /** Limits the given input to the given magnitude. */
   public static double limit(double v, double maxMagnitude) {
-    return limit(v, -maxMagnitude, maxMagnitude);
-  }
-
-  public static double limit(double v, double min, double max) {
-    return Math.min(max, Math.max(min, v));
+    return MathUtil.clamp(v, -maxMagnitude, maxMagnitude);
   }
 
   public static String joinStrings(String delim, List<?> strings) {
@@ -46,7 +43,7 @@ public final class Util {
   }
 
   public static double interpolate(double a, double b, double x) {
-    x = limit(x, 0.0, 1.0);
+    x = MathUtil.clamp(x, 0.0, 1.0);
     return a + (b - a) * x;
   }
 }

@@ -2,13 +2,17 @@ import edu.wpi.first.gradlerio.deploy.roborio.RoboRIO
 
 plugins {
     id 'java'
-    id 'edu.wpi.first.GradleRIO' version '2022.4.1'
+    id 'edu.wpi.first.GradleRIO' version '2023.1.1'
     id 'com.github.sherter.google-java-format' version '0.9'
-    id 'com.github.spotbugs' version '5.0.4'
+    id 'com.github.spotbugs' version '5.0.13'
 }
 
-sourceCompatibility = JavaVersion.VERSION_11
-targetCompatibility = JavaVersion.VERSION_11
+repositories {
+    mavenCentral()
+}
+
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
 
 def ROBOT_MAIN_CLASS = 'frc.robot.Main'
 
@@ -101,8 +105,19 @@ wpi.java.configureTestTasks(test)
 // Spotbugs settings
 spotbugsMain {
     ignoreFailures = false
+    onlyAnalyze = ['frc.lib.-', 'frc.robot.-']
     excludeFilter = file('spotbugsExclusions.xml')
 }
+
+test {
+    jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED'
+}
+
+googleJavaFormat {
+    toolVersion = '1.15.0'
+}
+
+assemble.dependsOn(tasks.googleJavaFormat)
 
 tasks.withType(com.github.spotbugs.snom.SpotBugsTask) {
     reports {
@@ -113,4 +128,9 @@ tasks.withType(com.github.spotbugs.snom.SpotBugsTask) {
             required.set(true)
         }
     }
+}
+
+// Configure string concat to always inline compile
+tasks.withType(JavaCompile) {
+    options.compilerArgs.add '-XDstringConcat=inline'
 }

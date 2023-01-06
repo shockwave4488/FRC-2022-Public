@@ -1,29 +1,31 @@
 package frc.robot.robotspecifics.swerve;
 
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj.SPI;
-import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.lib.BaseRobotContainer;
 import frc.lib.PreferencesParser;
 import frc.lib.drive.SwerveParameters;
 import frc.lib.logging.Logger;
-import frc.lib.operator.AxisTrigger;
 import frc.lib.operator.CircularDeadzone;
 import frc.lib.operator.I2DDeadzoneCalculator;
 import frc.lib.operator.IDeadzoneCalculator;
 import frc.lib.operator.SquareDeadzoneCalculator;
-import frc.lib.sensors.Limelight;
-import frc.lib.sensors.Limelight.DistanceEstimationConstants;
 import frc.lib.sensors.NavX;
+import frc.lib.sensors.vision.Limelight;
+import frc.lib.sensors.vision.VisionCamera.CameraPositionConstants;
 import frc.robot.Constants.DriveTrainConstants;
 import frc.robot.Constants.OIConstants;
+import frc.robot.Robot;
 import frc.robot.autonomous.modes.AutonomousChooser;
 import frc.robot.autonomous.modes.AutonomousTrajectories;
-import frc.robot.commands.c2022.defaults.DefaultSwerveDrive;
-import frc.robot.commands.c2022.drive.LockedSwerveDrive;
-import frc.robot.commands.c2022.drive.SwerveTurnToHUB;
-import frc.robot.commands.c2022.drive.VisionAlignToTarget;
+import frc.robot.commands.drive.LockedSwerveDrive;
+import frc.robot.commands.eruption.defaults.DefaultSwerveDrive;
+import frc.robot.commands.eruption.drive.SwerveTurnToHub;
+import frc.robot.commands.eruption.drive.VisionAlignToTarget;
 import frc.robot.subsystems.drive.ISwerveModule;
 import frc.robot.subsystems.drive.SwerveDrive;
 import frc.robot.subsystems.drive.SwerveModuleNeos;
@@ -41,14 +43,13 @@ public class SwerveRobotContainer extends BaseRobotContainer {
   private final SwerveParameters[] swerveParameters;
   private final I2DDeadzoneCalculator circularDeadzone;
   private final IDeadzoneCalculator squareDeadzone;
-  private final XboxController driverJoystick;
+  private final CommandXboxController driverJoystick;
   private final ISwerveModule m_frontLeft;
   private final ISwerveModule m_frontRight;
   private final ISwerveModule m_backLeft;
   private final ISwerveModule m_backRight;
-  private final DistanceEstimationConstants limelightDistEstConstants;
   private final Limelight limelight;
-  private AutonomousChooser autonomousChooser;
+  private final AutonomousChooser autonomousChooser;
 
   private SwerveParameters[] getSwerveParameters() {
     JSONObject swerveParametersJSONFL = prefs.getJSONObject("SwerveParametersFL");
@@ -71,13 +72,18 @@ public class SwerveRobotContainer extends BaseRobotContainer {
     };
   }
 
-  private DistanceEstimationConstants getLimelightConstants() {
-    JSONObject shooterLimelightDistEstConstantsJSON =
-        prefs.getJSONObject("LimelightShooterConstants");
-    return new DistanceEstimationConstants(
-        ((Number) shooterLimelightDistEstConstantsJSON.get("camHeight")).doubleValue(),
-        ((Number) shooterLimelightDistEstConstantsJSON.get("targetHeight")).doubleValue(),
-        ((Number) shooterLimelightDistEstConstantsJSON.get("camToNormalAngle")).doubleValue());
+  private CameraPositionConstants getLimelightConstants() {
+    JSONObject limelightConstantsJSON = prefs.getJSONObject("LimelightShooterConstants");
+    return new CameraPositionConstants(
+        new Transform3d(
+            new Translation3d(
+                ((Number) limelightConstantsJSON.get("X")).doubleValue(),
+                ((Number) limelightConstantsJSON.get("Y")).doubleValue(),
+                ((Number) limelightConstantsJSON.get("Z")).doubleValue()),
+            new Rotation3d(
+                Math.toRadians(((Number) limelightConstantsJSON.get("Roll")).doubleValue()),
+                Math.toRadians(((Number) limelightConstantsJSON.get("Pitch")).doubleValue()),
+                Math.toRadians(((Number) limelightConstantsJSON.get("Yaw")).doubleValue()))));
   }
 
   /**
@@ -97,12 +103,11 @@ public class SwerveRobotContainer extends BaseRobotContainer {
     m_backRight = new SwerveModuleNeos(swerveParameters[3], logger, prefs);
 
     swerve = new SwerveDrive(m_gyro, getSwerveModules(), logger);
-    driverJoystick = new XboxController(OIConstants.DRIVER_CONTROLLER_PORT);
-    limelightDistEstConstants = getLimelightConstants();
+    driverJoystick = new CommandXboxController(OIConstants.DRIVER_CONTROLLER_PORT);
     limelight =
         new Limelight(
             prefs.getString("LimelightShooterName"),
-            limelightDistEstConstants,
+            getLimelightConstants(),
             logger); // UPDATE VALUES HERE
     autonomousChooser =
         new AutonomousChooser(
@@ -114,7 +119,8 @@ public class SwerveRobotContainer extends BaseRobotContainer {
             null,
             m_gyro,
             limelight,
-            logger);
+            logger,
+            prefs);
 
     swerve.setDefaultCommand(getNewDefaultSwerveDriveCommand());
 
@@ -128,35 +134,34 @@ public class SwerveRobotContainer extends BaseRobotContainer {
   }
 
   protected void configureButtonBindings() {
-    JoystickButton driverX = new JoystickButton(driverJoystick, XboxController.Button.kX.value);
-    driverX.whenPressed(
-        new SwerveTurnToHUB(
-            swerve,
-            limelight,
-            m_gyro,
-            DriveTrainConstants.SWERVE_DRIVE_MAX_SPEED,
-            DriveTrainConstants.SWERVE_ROTATION_SPEED,
-            () ->
-                circularDeadzone.deadzone(
-                    driverJoystick.getLeftY() * -1, driverJoystick.getLeftX() * -1)));
+    driverJoystick
+        .x()
+        .onTrue(
+            new SwerveTurnToHub(
+                swerve,
+                m_gyro,
+                DriveTrainConstants.SWERVE_DRIVE_MAX_SPEED,
+                DriveTrainConstants.SWERVE_ROTATION_SPEED,
+                () ->
+                    circularDeadzone.deadzone(
+                        driverJoystick.getLeftY() * -1, driverJoystick.getLeftX() * -1)));
 
-    AxisTrigger driverRightTrigger =
-        new AxisTrigger(driverJoystick, XboxController.Axis.kRightTrigger.value, 0.75);
-    driverRightTrigger.toggleWhenActive(new LockedSwerveDrive(swerve));
+    driverJoystick.rightTrigger(0.75).toggleOnTrue(new LockedSwerveDrive(swerve));
 
-    JoystickButton driverY = new JoystickButton(driverJoystick, XboxController.Button.kY.value);
-    driverY.toggleWhenPressed(
-        new VisionAlignToTarget(
-            swerve,
-            limelight,
-            m_gyro,
-            DriveTrainConstants.SWERVE_DRIVE_MAX_SPEED,
-            DriveTrainConstants.SWERVE_ROTATION_SPEED,
-            () ->
-                circularDeadzone.deadzone(
-                    driverJoystick.getLeftY() * -1, driverJoystick.getLeftX() * -1),
-            10,
-            true));
+    driverJoystick
+        .y()
+        .toggleOnTrue(
+            new VisionAlignToTarget(
+                swerve,
+                limelight,
+                m_gyro,
+                DriveTrainConstants.SWERVE_DRIVE_MAX_SPEED,
+                DriveTrainConstants.SWERVE_ROTATION_SPEED,
+                () ->
+                    circularDeadzone.deadzone(
+                        driverJoystick.getLeftY() * -1, driverJoystick.getLeftX() * -1),
+                10,
+                true));
   }
 
   private DefaultSwerveDrive getNewDefaultSwerveDriveCommand() {
@@ -174,7 +179,7 @@ public class SwerveRobotContainer extends BaseRobotContainer {
             circularDeadzone.deadzone(
                 driverJoystick.getLeftY() * -1, driverJoystick.getLeftX() * -1),
         () -> squareDeadzone.deadzone(driverJoystick.getRightX()),
-        () -> driverJoystick.getStartButtonPressed());
+        driverJoystick.start());
   }
 
   public Command getAutonomousCommand() {
