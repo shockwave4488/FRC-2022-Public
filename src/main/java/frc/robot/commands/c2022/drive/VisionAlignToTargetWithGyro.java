@@ -4,8 +4,8 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandBase;
-import frc.lib.sensors.Limelight;
 import frc.lib.sensors.NavX;
+import frc.lib.sensors.vision.Limelight;
 import frc.robot.Constants;
 import frc.robot.subsystems.drive.SwerveDrive;
 import java.util.function.Supplier;
@@ -102,7 +102,7 @@ public class VisionAlignToTargetWithGyro extends CommandBase {
   @Override
   public void execute() {
     double rotPower = 0;
-    SmartDashboard.putBoolean("LL Has Target", limelight.hasTarget());
+    SmartDashboard.putBoolean("LL Has Target", limelight.hasTargets());
 
     double gyroDistToHub =
         swerve.getOdometry().getTranslation().getDistance(Constants.FieldConstants.HUB_CENTER);
@@ -117,7 +117,7 @@ public class VisionAlignToTargetWithGyro extends CommandBase {
       // pointing the right general direction.
       currentCyclesLL = 0;
       rotPower = gyroCalcPower(gyroDesiredAngle);
-    } else if (!limelight.hasTarget()) {
+    } else if (!limelight.hasTargets()) {
       // Limelight relatively points to the hub but is probably too close to see it.
       // Likely finishes with gyro done cycles.
       currentCyclesLL = 0;
@@ -138,11 +138,11 @@ public class VisionAlignToTargetWithGyro extends CommandBase {
 
   private double limelightCalcPower() {
     double currentAngle = gyro.getYaw().getDegrees();
-    double limelightAngle = limelight.getX();
-    // Returns a negative value when the target is on the left side of the screen
+    double limelightAngle = limelight.getBestTarget().get().getX().getDegrees();
+    // Returns a positive value when the target is on the left side of the screen
     SmartDashboard.putNumber("LL X Difference", limelightAngle);
     SmartDashboard.putNumber("LL Robot Current Angle", currentAngle);
-    double targetAngle = currentAngle - limelightAngle;
+    double targetAngle = currentAngle + limelightAngle;
     if (targetAngle > 180) {
       targetAngle -= 360;
     } else if (targetAngle < -180) {

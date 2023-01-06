@@ -22,10 +22,14 @@ public interface ISwerveModule {
   /** Gets which speed the module should be going in meters/sec */
   public double getDesiredSpeed();
 
-  /** @return The speed of the module's wheel in meters/sec */
+  /**
+   * @return The speed of the module's wheel in meters/sec
+   */
   public double getSpeed();
 
-  /** @return The angle of the module's wheels in degrees */
+  /**
+   * @return The angle of the module's wheels in degrees
+   */
   public double getAbsoluteAngleDegrees();
 
   /** Updates the Smart Dashboard values */
