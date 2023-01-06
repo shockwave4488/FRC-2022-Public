@@ -4,14 +4,13 @@
 
 package frc.robot;
 
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.util.net.PortForwarder;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.lib.IRobotContainer;
 import frc.lib.PreferencesParser;
+import frc.lib.commands.CommandLogger;
 import frc.lib.logging.Logger;
 
 /**
@@ -26,7 +25,6 @@ public class Robot extends TimedRobot {
   private final PreferencesParser prefs = new PreferencesParser(logger);
   private final RobotSelector robotSelector = new RobotSelector(prefs, logger);
   private IRobotContainer m_robotContainer;
-  private NetworkTable table;
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -40,12 +38,7 @@ public class Robot extends TimedRobot {
     m_robotContainer.runZeroSensors();
     m_robotContainer.runSetUpTrackables();
 
-    table = NetworkTableInstance.getDefault().getTable("/LiveWindow/Ungrouped/Scheduler");
-    logger.addStringTrackable(
-        () -> (String.join(", ", table.getEntry("Names").getStringArray(new String[0]))),
-        "CommandScheduler",
-        4,
-        "Running Commands");
+    CommandLogger.getInstance().setLoggerTrackable(logger);
 
     logger.createFiles();
 
@@ -68,6 +61,7 @@ public class Robot extends TimedRobot {
     // and running subsystem periodic() methods.  This must be called from the robot's periodic
     // block in order for anything in the Command-based framework to work.
     CommandScheduler.getInstance().run();
+    CommandLogger.getInstance().update();
     m_robotContainer.runUpdateSmartDashboard();
   }
 
@@ -88,7 +82,6 @@ public class Robot extends TimedRobot {
   /** This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
   @Override
   public void autonomousInit() {
-
     logger.initialize();
     logger.writeToLogFormatted(this, "Autonomous Initialized!");
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();

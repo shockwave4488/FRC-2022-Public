@@ -14,7 +14,6 @@ public class RepeatCommand extends PerpetualCommand {
    */
   public RepeatCommand(Command command) {
     super(command);
-    this.setName("Repeat" + command.getName());
   }
 
   @Override
